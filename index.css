@@ -299,6 +299,11 @@ body.widget {
     -webkit-app-region: no-drag; app-region: no-drag;
 }
 .head-right { display: flex; align-items: center; gap: 8px; }
+.btn.icon.active {
+    background: rgba(56, 189, 248, 0.18);
+    border-color: var(--accent);
+    color: var(--accent);
+}
 
 .widget-head {
     display: flex; align-items: center; justify-content: space-between;

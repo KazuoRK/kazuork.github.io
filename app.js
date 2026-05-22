@@ -469,6 +469,31 @@ function initWidget() {
     const closeBtn = el("closeWidget");
     if (closeBtn) closeBtn.addEventListener("click", () => window.close());
 
+    // Botão 📌 — alterna "sempre no topo". Só funciona no Electron (widgetAPI
+    // existe via preload); no navegador, o botão fica oculto.
+    const pinBtn = el("pinWidget");
+    if (pinBtn) {
+        if (!window.widgetAPI) {
+            pinBtn.style.display = "none";
+        } else {
+            const PIN_KEY = "kazu.widget.pinned";
+            const applyPinned = async (pinned) => {
+                pinBtn.classList.toggle("active", pinned);
+                pinBtn.title = pinned ? "Fixado no topo — clique para desafixar" : "Fixar no topo";
+                pinBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
+                await window.widgetAPI.setAlwaysOnTop(pinned);
+            };
+            // Restaura preferência salva.
+            const initial = localStorage.getItem(PIN_KEY) === "1";
+            applyPinned(initial);
+            pinBtn.addEventListener("click", async () => {
+                const next = !(localStorage.getItem(PIN_KEY) === "1");
+                localStorage.setItem(PIN_KEY, next ? "1" : "0");
+                await applyPinned(next);
+            });
+        }
+    }
+
     Store.onChange(() => { data = Store.load(); render(); });
     // Atualiza periodicamente para refletir mudança de dia (atrasos).
     setInterval(() => { data = Store.load(); render(); }, 60_000);
