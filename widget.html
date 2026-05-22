@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1220">
+    <title>Pagamentos · Widget</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230f172a'/%3E%3Crect x='10' y='16' width='44' height='40' rx='6' fill='%2338bdf8'/%3E%3Crect x='10' y='16' width='44' height='10' fill='%23818cf8'/%3E%3C/svg%3E">
+    <link href="index.css" type="text/css" rel="stylesheet">
+</head>
+<body class="widget">
+    <header class="widget-head drag">
+        <h2><span class="dot"></span> Pagamentos</h2>
+        <div class="head-right no-drag">
+            <span id="widgetMonth" class="month"></span>
+            <button id="closeWidget" class="btn ghost icon" title="Fechar widget" aria-label="Fechar">×</button>
+        </div>
+    </header>
+
+    <section class="widget-totals">
+        <div class="box">
+            <span class="label">Total do mês</span>
+            <strong id="widgetTotal">R$ 0,00</strong>
+        </div>
+        <div class="box">
+            <span class="label">A pagar</span>
+            <strong id="widgetDue" class="warn">R$ 0,00</strong>
+        </div>
+    </section>
+
+    <ul id="widgetList" class="widget-list"></ul>
+    <div id="widgetEmpty" class="widget-empty" style="display:none">
+        Nenhum pagamento cadastrado para este mês.<br>
+        Abra o app principal para adicionar.
+    </div>
+
+    <footer class="widget-foot">
+        <button id="refresh" class="btn ghost">Atualizar</button>
+        <button id="openApp" class="btn primary">Abrir app</button>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "name": "calendario-pagamentos",
+  "version": "1.0.0",
+  "description": "Calendário mensal de pagamentos com widget de área de trabalho.",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.kazuork.calendariopagamentos",
+    "productName": "Calendario de Pagamentos",
+    "asar": true,
+    "files": [
+      "electron/**/*",
+      "index.html",
+      "widget.html",
+      "index.css",
+      "app.js",
+      "manifest.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "artifactName": "CalendarioPagamentos-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Calendario de Pagamentos",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "CalendarioPagamentos-Portable-${version}.${ext}"
+    }
+  }
+}

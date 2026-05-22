@@ -1,0 +1,26 @@
+{
+    "name": "Calendário de Pagamentos",
+    "short_name": "Pagamentos",
+    "description": "Calendário mensal das contas a pagar, com pagamentos recorrentes e widget compacto para a área de trabalho.",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#0b1220",
+    "theme_color": "#0f172a",
+    "lang": "pt-BR",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%230f172a'/%3E%3Crect x='80' y='128' width='352' height='320' rx='48' fill='%2338bdf8'/%3E%3Crect x='80' y='128' width='352' height='80' fill='%23818cf8'/%3E%3Crect x='144' y='80' width='32' height='96' rx='16' fill='%23e2e8f0'/%3E%3Crect x='336' y='80' width='32' height='96' rx='16' fill='%23e2e8f0'/%3E%3Ccircle cx='176' cy='304' r='24' fill='%230f172a'/%3E%3Ccircle cx='256' cy='304' r='24' fill='%230f172a'/%3E%3Ccircle cx='336' cy='304' r='24' fill='%230f172a'/%3E%3Ccircle cx='176' cy='384' r='24' fill='%230f172a'/%3E%3Ccircle cx='256' cy='384' r='24' fill='%23facc15'/%3E%3Ccircle cx='336' cy='384' r='24' fill='%230f172a'/%3E%3C/svg%3E",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Abrir widget",
+            "short_name": "Widget",
+            "url": "./widget.html"
+        }
+    ]
+}
