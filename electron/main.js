@@ -1,40 +1,115 @@
 /* Processo principal do Electron.
-   - Janela principal: calendário (index.html)
-   - Janela widget: frameless, always-on-top, arrastável (widget.html)
-   localStorage é compartilhado entre as janelas (mesma sessão), então o
-   evento `storage` propaga as mudanças automaticamente.
+   - Janela principal (index.html): calendário completo.
+   - Janela widget (widget.html): no Windows, fica "fixada no desktop" — usamos
+     SetParent(hwnd, WorkerW) via PowerShell para que ela vire filha do shell
+     do desktop, vivendo entre o papel de parede e os ícones. Assim:
+       • outros apps NÃO cobrem o widget (porque ele é parte do desktop)
+       • Win+D mostra ele junto com a área de trabalho
+       • Alt-Tab não inclui ele
+   O usuário pode forçar "sempre no topo" pelo botão 📌 dentro do widget,
+   e abrir/fechar pelo botão no app principal.
 */
 
-const { app, BrowserWindow, screen, Menu, shell, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, screen, shell, ipcMain } = require("electron");
 const path = require("path");
 const { execFile } = require("child_process");
 
-/** Empurra a janela para o fundo da ordem-Z no Windows (SetWindowPos HWND_BOTTOM).
- *  Best effort — em caso de falha, segue como janela normal. */
-function sendToBackOnWindows(win) {
-    if (process.platform !== "win32" || !win || win.isDestroyed()) return;
-    let hwnd;
-    try {
-        const buf = win.getNativeWindowHandle();
-        // x64: HWND ocupa 8 bytes; x86: 4 bytes. Lemos como inteiro positivo.
-        hwnd = buf.length >= 8 ? buf.readBigUInt64LE(0).toString() : buf.readUInt32LE(0).toString();
-    } catch { return; }
-    const ps = [
-        "$sig = '[DllImport(\"user32.dll\")] public static extern bool SetWindowPos(IntPtr h, IntPtr a, int x, int y, int w, int t, uint f);';",
-        "$w = Add-Type -MemberDefinition $sig -Name W -PassThru;",
-        `[void]$w::SetWindowPos([IntPtr]${hwnd}, [IntPtr]1, 0, 0, 0, 0, 0x0013)`
-    ].join(" ");
-    execFile("powershell.exe", ["-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
-        { windowsHide: true }, () => { /* ignora erros */ });
-}
-
 const ROOT = path.join(__dirname, "..");
 const PRELOAD = path.join(__dirname, "preload.js");
+const IS_WIN = process.platform === "win32";
 
 let mainWindow = null;
 let widgetWindow = null;
+let widgetMode = "desktop"; // "desktop" (padrão) ou "ontop"
+
+/* ============================================================
+   WorkerW pinning via PowerShell
+   ============================================================ */
+
+function hwndOf(win) {
+    try {
+        const buf = win.getNativeWindowHandle();
+        return buf.length >= 8
+            ? buf.readBigUInt64LE(0).toString()
+            : buf.readUInt32LE(0).toString();
+    } catch { return null; }
+}
+
+function runPowerShell(script) {
+    return new Promise((resolve) => {
+        const b64 = Buffer.from(script, "utf16le").toString("base64");
+        execFile("powershell.exe",
+            ["-NoProfile", "-WindowStyle", "Hidden", "-EncodedCommand", b64],
+            { windowsHide: true, timeout: 10000 },
+            (err, stdout, stderr) => resolve({ err, stdout, stderr })
+        );
+    });
+}
+
+const PINVOKE = `
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class WW {
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindow(string a, string b);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr c, string a, string b);
+    [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeout(IntPtr h, uint m, IntPtr w, IntPtr l, uint f, uint t, out IntPtr r);
+    [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c, IntPtr p);
+    [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc e, IntPtr l);
+    public delegate bool EnumWindowsProc(IntPtr h, IntPtr l);
+}
+"@ -ErrorAction SilentlyContinue
+`;
+
+async function pinToDesktop(win) {
+    if (!IS_WIN || !win || win.isDestroyed()) return false;
+    const hwnd = hwndOf(win);
+    if (!hwnd) return false;
+    const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+${PINVOKE}
+$progman = [WW]::FindWindow("Progman", $null)
+if ($progman -eq [IntPtr]::Zero) { exit 1 }
+$r = [IntPtr]::Zero
+[void][WW]::SendMessageTimeout($progman, 0x052C, [IntPtr]0xD, [IntPtr]0x1, 0, 1000, [ref]$r)
+
+$global:wkw = [IntPtr]::Zero
+$cb = [WW+EnumWindowsProc]{
+    param($h, $l)
+    $dv = [WW]::FindWindowEx($h, [IntPtr]::Zero, "SHELLDLL_DefView", $null)
+    if ($dv -ne [IntPtr]::Zero) {
+        $global:wkw = [WW]::FindWindowEx([IntPtr]::Zero, $h, "WorkerW", $null)
+    }
+    return $true
+}
+[void][WW]::EnumWindows($cb, [IntPtr]::Zero)
+if ($global:wkw -eq [IntPtr]::Zero) { $global:wkw = $progman }
+[void][WW]::SetParent([IntPtr]${hwnd}, $global:wkw)
+`;
+    const { err } = await runPowerShell(script);
+    return !err;
+}
+
+async function unpinFromDesktop(win) {
+    if (!IS_WIN || !win || win.isDestroyed()) return false;
+    const hwnd = hwndOf(win);
+    if (!hwnd) return false;
+    const script = `${PINVOKE}
+[void][WW]::SetParent([IntPtr]${hwnd}, [IntPtr]::Zero)
+`;
+    const { err } = await runPowerShell(script);
+    return !err;
+}
+
+/* ============================================================
+   Janelas
+   ============================================================ */
 
 function createMainWindow() {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show(); mainWindow.focus();
+        return;
+    }
     mainWindow = new BrowserWindow({
         width: 1180,
         height: 780,
@@ -53,14 +128,11 @@ function createMainWindow() {
 
     mainWindow.loadFile(path.join(ROOT, "index.html"));
 
-    // Quando o renderer chamar window.open("widget.html", "PagamentosWidget", ...),
-    // interceptamos e criamos a janela widget no lugar do popup padrão.
     mainWindow.webContents.setWindowOpenHandler(({ url, frameName }) => {
         if (url.endsWith("widget.html") || frameName === "PagamentosWidget") {
             openWidget();
             return { action: "deny" };
         }
-        // Abre links externos no navegador padrão.
         if (/^https?:\/\//i.test(url)) {
             shell.openExternal(url);
             return { action: "deny" };
@@ -71,10 +143,9 @@ function createMainWindow() {
     mainWindow.on("closed", () => { mainWindow = null; });
 }
 
-function openWidget() {
+async function openWidget() {
     if (widgetWindow && !widgetWindow.isDestroyed()) {
         widgetWindow.show();
-        widgetWindow.focus();
         return;
     }
 
@@ -85,16 +156,14 @@ function openWidget() {
     const y = workArea.y + 24;
 
     widgetWindow = new BrowserWindow({
-        width: w,
-        height: h,
-        x, y,
-        minWidth: 280,
-        minHeight: 360,
+        width: w, height: h, x, y,
+        minWidth: 280, minHeight: 360,
         frame: false,
         transparent: false,
         resizable: true,
         alwaysOnTop: false,
-        skipTaskbar: false,
+        skipTaskbar: true,
+        focusable: true,
         backgroundColor: "#0b1220",
         title: "Pagamentos · Widget",
         webPreferences: {
@@ -105,62 +174,99 @@ function openWidget() {
         }
     });
 
-    // Visível em todas as áreas de trabalho virtuais, mas SEM ficar por cima
-    // das outras janelas. Para fixar no topo, use o botão 📌 dentro do widget.
     widgetWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
-
     widgetWindow.loadFile(path.join(ROOT, "widget.html"));
 
-    // Manda pro fundo da Z-order assim que aparece, e sempre que perder foco —
-    // assim o widget passa a viver "atrás" das outras janelas, como um widget
-    // de área de trabalho. O usuário pode forçar "no topo" com o botão 📌.
-    widgetWindow.once("ready-to-show", () => {
-        if (!widgetWindow.isAlwaysOnTop()) sendToBackOnWindows(widgetWindow);
+    widgetWindow.once("ready-to-show", async () => {
+        if (widgetMode === "desktop") await pinToDesktop(widgetWindow);
+        else widgetWindow.setAlwaysOnTop(true, "floating");
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("widget:state", { open: true });
+        }
     });
-    widgetWindow.on("blur", () => {
-        if (widgetWindow && !widgetWindow.isAlwaysOnTop()) sendToBackOnWindows(widgetWindow);
+
+    widgetWindow.on("closed", () => {
+        widgetWindow = null;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send("widget:state", { open: false });
+        }
     });
 
     widgetWindow.webContents.setWindowOpenHandler(({ url }) => {
         if (url.endsWith("index.html")) {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.show();
-                mainWindow.focus();
-            } else {
-                createMainWindow();
-            }
+            createMainWindow();
             return { action: "deny" };
         }
         return { action: "deny" };
     });
-
-    widgetWindow.on("closed", () => { widgetWindow = null; });
 }
 
-// IPC para o widget controlar o próprio "sempre no topo".
-ipcMain.handle("widget:setAlwaysOnTop", (e, flag) => {
-    const win = BrowserWindow.fromWebContents(e.sender);
-    if (!win) return false;
-    win.setAlwaysOnTop(!!flag, "floating");
-    if (!flag) sendToBackOnWindows(win);
-    return win.isAlwaysOnTop();
+async function closeWidget() {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+        // Solta do WorkerW antes de fechar para evitar deixar "fantasma".
+        if (IS_WIN) await unpinFromDesktop(widgetWindow);
+        widgetWindow.close();
+    }
+}
+
+async function setWidgetMode(mode) {
+    if (!widgetWindow || widgetWindow.isDestroyed()) {
+        widgetMode = mode;
+        return widgetMode;
+    }
+    if (mode === "ontop") {
+        if (IS_WIN) await unpinFromDesktop(widgetWindow);
+        widgetWindow.setAlwaysOnTop(true, "floating");
+    } else {
+        widgetWindow.setAlwaysOnTop(false);
+        if (IS_WIN) await pinToDesktop(widgetWindow);
+    }
+    widgetMode = mode;
+    return widgetMode;
+}
+
+/* ============================================================
+   IPC
+   ============================================================ */
+
+ipcMain.handle("widget:setMode", async (_e, mode) =>
+    setWidgetMode(mode === "ontop" ? "ontop" : "desktop")
+);
+ipcMain.handle("widget:getMode", () => widgetMode);
+ipcMain.handle("widget:isOpen", () => !!(widgetWindow && !widgetWindow.isDestroyed()));
+ipcMain.handle("widget:toggle", async () => {
+    if (widgetWindow && !widgetWindow.isDestroyed()) {
+        await closeWidget();
+        return false;
+    }
+    await openWidget();
+    return true;
 });
-ipcMain.handle("widget:isAlwaysOnTop", (e) => {
-    const win = BrowserWindow.fromWebContents(e.sender);
-    return win ? win.isAlwaysOnTop() : false;
-});
+
+/* ============================================================
+   Ciclo de vida
+   ============================================================ */
 
 app.whenReady().then(() => {
-    // Menu mínimo (Windows).
     Menu.setApplicationMenu(null);
     createMainWindow();
-
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
     });
 });
 
+app.on("before-quit", async (e) => {
+    // Solta o widget do WorkerW antes de sair, para não deixar janela órfã
+    // grudada no shell do desktop.
+    if (IS_WIN && widgetWindow && !widgetWindow.isDestroyed()) {
+        e.preventDefault();
+        try { await unpinFromDesktop(widgetWindow); } catch {}
+        widgetWindow.destroy();
+        widgetWindow = null;
+        app.quit();
+    }
+});
+
 app.on("window-all-closed", () => {
-    // No Windows/Linux encerra ao fechar tudo; no macOS mantém vivo.
     if (process.platform !== "darwin") app.quit();
 });

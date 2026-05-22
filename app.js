@@ -358,14 +358,32 @@ function initApp() {
     });
     el("addBtn").addEventListener("click", () => openDialogForNew());
 
-    /* ----- Widget popup ----- */
-    el("openWidget").addEventListener("click", () => {
-        const w = 360, h = 560;
-        const left = (screen.availWidth || screen.width) - w - 40;
-        const top = 80;
-        window.open("widget.html", "PagamentosWidget",
-            `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
-    });
+    /* ----- Widget ----- */
+    const widgetBtn = el("openWidget");
+    const setWidgetBtnLabel = (open) => {
+        widgetBtn.textContent = open ? "Fechar widget" : "Abrir widget";
+        widgetBtn.title = open
+            ? "Fechar o widget da área de trabalho"
+            : "Abrir o widget na área de trabalho";
+    };
+    if (window.appAPI) {
+        // Estado inicial e listener.
+        window.appAPI.isWidgetOpen().then(setWidgetBtnLabel);
+        window.appAPI.onWidgetState((s) => setWidgetBtnLabel(!!s.open));
+        widgetBtn.addEventListener("click", async () => {
+            const nowOpen = await window.appAPI.toggleWidget();
+            setWidgetBtnLabel(!!nowOpen);
+        });
+    } else {
+        // Fallback web: abre o widget em uma janela popup.
+        widgetBtn.addEventListener("click", () => {
+            const w = 360, h = 560;
+            const left = (screen.availWidth || screen.width) - w - 40;
+            const top = 80;
+            window.open("widget.html", "PagamentosWidget",
+                `popup=yes,width=${w},height=${h},left=${left},top=${top}`);
+        });
+    }
 
     /* ----- Sync entre abas ----- */
     Store.onChange(() => { data = Store.load(); render(); });
@@ -469,27 +487,30 @@ function initWidget() {
     const closeBtn = el("closeWidget");
     if (closeBtn) closeBtn.addEventListener("click", () => window.close());
 
-    // Botão 📌 — alterna "sempre no topo". Só funciona no Electron (widgetAPI
-    // existe via preload); no navegador, o botão fica oculto.
+    // Botão 📌 — alterna entre "fixado no desktop" (padrão) e "sempre no topo".
+    // Só funciona no Electron (widgetAPI existe via preload); no navegador fica oculto.
     const pinBtn = el("pinWidget");
     if (pinBtn) {
         if (!window.widgetAPI) {
             pinBtn.style.display = "none";
         } else {
-            const PIN_KEY = "kazu.widget.pinned";
-            const applyPinned = async (pinned) => {
-                pinBtn.classList.toggle("active", pinned);
-                pinBtn.title = pinned ? "Fixado no topo — clique para desafixar" : "Fixar no topo";
-                pinBtn.setAttribute("aria-pressed", pinned ? "true" : "false");
-                await window.widgetAPI.setAlwaysOnTop(pinned);
+            const MODE_KEY = "kazu.widget.mode";
+            const applyMode = async (mode) => {
+                const ontop = mode === "ontop";
+                pinBtn.classList.toggle("active", ontop);
+                pinBtn.title = ontop
+                    ? "Sempre no topo — clique para fixar no desktop"
+                    : "Fixar no topo (atualmente preso no desktop)";
+                pinBtn.setAttribute("aria-pressed", ontop ? "true" : "false");
+                await window.widgetAPI.setMode(mode);
             };
-            // Restaura preferência salva.
-            const initial = localStorage.getItem(PIN_KEY) === "1";
-            applyPinned(initial);
+            const initial = localStorage.getItem(MODE_KEY) === "ontop" ? "ontop" : "desktop";
+            applyMode(initial);
             pinBtn.addEventListener("click", async () => {
-                const next = !(localStorage.getItem(PIN_KEY) === "1");
-                localStorage.setItem(PIN_KEY, next ? "1" : "0");
-                await applyPinned(next);
+                const current = localStorage.getItem(MODE_KEY) === "ontop" ? "ontop" : "desktop";
+                const next = current === "ontop" ? "desktop" : "ontop";
+                localStorage.setItem(MODE_KEY, next);
+                await applyMode(next);
             });
         }
     }
