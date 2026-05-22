@@ -56,6 +56,15 @@ function formatBRL(n) {
     });
 }
 
+/** Soma um valor que pode ser null (item sem valor definido). */
+function sumAmount(acc, v) {
+    return acc + (typeof v === "number" && !isNaN(v) ? v : 0);
+}
+
+function hasAmount(p) {
+    return typeof p.amount === "number" && !isNaN(p.amount);
+}
+
 /** Compara duas chaves "YYYY-MM" → -1, 0, 1. */
 function cmpMonthKey(a, b) {
     return a < b ? -1 : a > b ? 1 : 0;
@@ -130,17 +139,20 @@ function initApp() {
 
     function renderSummary(list, y, m0) {
         let total = 0, paid = 0, due = 0, overdue = 0;
+        let missing = 0;
         const now = new Date();
         for (const p of list) {
-            total += p.amount;
-            if (p.paid) paid += p.amount;
+            if (!hasAmount(p)) missing++;
+            total = sumAmount(total, p.amount);
+            if (p.paid) paid = sumAmount(paid, p.amount);
             else {
                 const past = isPastDay(y, m0, p.effectiveDay, now);
-                if (past) overdue += p.amount;
-                else due += p.amount;
+                if (past) overdue = sumAmount(overdue, p.amount);
+                else due = sumAmount(due, p.amount);
             }
         }
-        el("monthTotal").textContent = formatBRL(total);
+        const suffix = missing > 0 ? ` · ${missing} sem valor` : "";
+        el("monthTotal").textContent = formatBRL(total) + suffix;
         el("monthPaid").textContent = formatBRL(paid);
         el("monthDue").textContent = formatBRL(due);
         el("monthOverdue").textContent = formatBRL(overdue);
@@ -189,7 +201,7 @@ function initApp() {
                 if (p.paid) pill.classList.add("paid");
                 else if (isPastDay(view.year, view.month0, d, now)) pill.classList.add("overdue");
                 if (p.recurring) pill.classList.add("recurring");
-                pill.textContent = `${p.name} · ${formatBRL(p.amount)}`;
+                pill.textContent = hasAmount(p) ? `${p.name} · ${formatBRL(p.amount)}` : p.name;
                 pills.appendChild(pill);
             }
             if (items.length > 3) {
@@ -242,7 +254,13 @@ function initApp() {
 
             const amount = document.createElement("span");
             amount.className = "amount";
-            amount.textContent = formatBRL(p.amount);
+            if (hasAmount(p)) {
+                amount.textContent = formatBRL(p.amount);
+            } else {
+                amount.textContent = "—";
+                amount.classList.add("muted-amount");
+                amount.title = "Sem valor definido";
+            }
 
             li.append(check, info, amount);
             paymentList.appendChild(li);
@@ -274,7 +292,7 @@ function initApp() {
         el("dialogTitle").textContent = "Editar pagamento";
         el("deleteBtn").hidden = false;
         el("name").value = p.name;
-        el("amount").value = p.amount;
+        el("amount").value = hasAmount(p) ? p.amount : "";
         el("day").value = p.day;
         el("recurring").checked = !!p.recurring;
         el("notes").value = p.notes || "";
@@ -285,11 +303,13 @@ function initApp() {
         e.preventDefault();
         const id = el("paymentId").value;
         const name = el("name").value.trim();
-        const amount = parseFloat(el("amount").value);
+        const rawAmount = el("amount").value.trim();
+        const amount = rawAmount === "" ? null : parseFloat(rawAmount);
         const day = Math.max(1, Math.min(31, parseInt(el("day").value, 10) || 1));
         const recurring = el("recurring").checked;
         const notes = el("notes").value.trim();
-        if (!name || isNaN(amount)) return;
+        if (!name) return;
+        if (rawAmount !== "" && isNaN(amount)) return;
 
         if (id) {
             const p = data.payments.find(x => x.id === id);
@@ -373,12 +393,14 @@ function initWidget() {
         monthEl.textContent = `${MONTH_NAMES[month0]} ${year}`;
 
         const list = paymentsForMonth(data, year, month0);
-        let total = 0, due = 0;
+        let total = 0, due = 0, missing = 0;
         for (const p of list) {
-            total += p.amount;
-            if (!p.paid) due += p.amount;
+            if (!hasAmount(p)) missing++;
+            total = sumAmount(total, p.amount);
+            if (!p.paid) due = sumAmount(due, p.amount);
         }
-        totalEl.textContent = formatBRL(total);
+        const suffix = missing > 0 ? ` +${missing}?` : "";
+        totalEl.textContent = formatBRL(total) + suffix;
         dueEl.textContent = formatBRL(due);
 
         listEl.innerHTML = "";
@@ -418,7 +440,13 @@ function initWidget() {
 
             const amount = document.createElement("span");
             amount.className = "amount";
-            amount.textContent = formatBRL(p.amount);
+            if (hasAmount(p)) {
+                amount.textContent = formatBRL(p.amount);
+            } else {
+                amount.textContent = "—";
+                amount.classList.add("muted-amount");
+                amount.title = "Sem valor definido";
+            }
 
             // Layout: check, chip, info, amount → ajusta grid dinamicamente.
             li.style.gridTemplateColumns = "auto auto 1fr auto";
