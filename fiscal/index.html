@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Takeda Gestão — Importador de Notas de Entrada (NFS-e)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topo">
+    <h1>Importador de Notas de Entrada</h1>
+    <p class="sub">
+      NFS-e que a loja <strong>recebe</strong> de terceiros — leitura pura, sem emissão,
+      sem SEFAZ, sem certificado. Leiaute Nacional e ABRASF.
+    </p>
+  </header>
+
+  <main>
+    <section class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept=".xml,application/xml,text/xml" multiple hidden />
+      <p class="dz-titulo">Arraste os XMLs aqui ou clique para selecionar</p>
+      <p class="dz-hint">Pode soltar vários de uma vez. Nada sai do seu navegador.</p>
+      <button type="button" id="btnExemplo" class="link">Carregar nota de exemplo</button>
+    </section>
+
+    <section id="resultados" class="resultados" hidden>
+      <div class="acoes">
+        <span id="contador" class="contador"></span>
+        <span class="acoes-dir">
+          <button type="button" id="btnCsv" class="btn">Exportar CSV</button>
+          <button type="button" id="btnLimpar" class="btn ghost">Limpar</button>
+        </span>
+      </div>
+      <div id="cards"></div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    Fluxo: <code>importada → conferida → lançada</code>.
+    A ferramenta extrai para <strong>conferência humana</strong> — não confia sozinha.
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

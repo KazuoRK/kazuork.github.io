@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- EXEMPLO FICTÍCIO e ilustrativo do leiaute Nacional da NFS-e. Sem validade fiscal. -->
+<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.00">
+  <infNFSe Id="NFS00000000000000000001">
+    <nNFSe>12345</nNFSe>
+    <emit>
+      <CNPJ>11222333000181</CNPJ>
+      <xNome>Montagem &amp; Cia Ltda</xNome>
+    </emit>
+    <DPS>
+      <infDPS>
+        <dhEmi>2026-05-20T14:30:00-03:00</dhEmi>
+        <serie>1</serie>
+        <nDPS>12345</nDPS>
+        <prest>
+          <CNPJ>11222333000181</CNPJ>
+          <xNome>Montagem &amp; Cia Ltda</xNome>
+        </prest>
+        <toma>
+          <CNPJ>99888777000166</CNPJ>
+          <xNome>Takeda Moveis Ltda</xNome>
+        </toma>
+        <serv>
+          <cServ>
+            <cTribNac>070201</cTribNac>
+            <xDescServ>Montagem de moveis sob encomenda</xDescServ>
+          </cServ>
+        </serv>
+        <valores>
+          <vServ>1000.00</vServ>
+          <vDeducoes>0.00</vDeducoes>
+          <vBC>1000.00</vBC>
+          <trib>
+            <tribMun>
+              <pAliq>3.00</pAliq>
+              <vISSQN>30.00</vISSQN>
+              <tpRetISSQN>2</tpRetISSQN>
+            </tribMun>
+            <tribFed>
+              <vRetIRRF>15.00</vRetIRRF>
+              <vRetCP>0.00</vRetCP>
+              <vRetPIS>6.50</vRetPIS>
+              <vRetCOFINS>30.00</vRetCOFINS>
+              <vRetCSLL>10.00</vRetCSLL>
+            </tribFed>
+          </trib>
+          <vLiq>908.50</vLiq>
+        </valores>
+      </infDPS>
+    </DPS>
+  </infNFSe>
+</NFSe>
