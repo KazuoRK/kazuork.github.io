@@ -12,6 +12,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['"Hanken Grotesk"', "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ['"Fraunces"', "Georgia", "serif"],
+      },
       colors: {
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
