@@ -107,6 +107,90 @@
   }
 }
 
+/* ----------------------------------------------------------------------------
+   Tipografia editorial (carta do Claude). Inspiração: Tufte CSS.
+   Corpo em serifa (Newsreader), furniture em grotesk (Hanken). Tinta sobre papel.
+---------------------------------------------------------------------------- */
+.essay {
+  font-family: "Newsreader", Georgia, serif;
+  font-optical-sizing: auto;
+  font-size: 1.3125rem; /* ~21px */
+  line-height: 1.62;
+  color: hsl(60 4% 12%);
+}
+.essay p {
+  margin: 0 0 1.45em;
+  text-wrap: pretty;
+  hanging-punctuation: first last;
+}
+.essay a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: hsl(var(--primary) / 0.5);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 0.2s;
+}
+.essay a:hover {
+  text-decoration-color: hsl(var(--primary));
+}
+.essay em {
+  font-style: italic;
+}
+.essay strong {
+  font-weight: 600;
+}
+
+/* Capitular (drop cap) no primeiro parágrafo */
+.dropcap::first-letter {
+  float: left;
+  font-family: "Newsreader", serif;
+  font-weight: 500;
+  font-size: 4.6em;
+  line-height: 0.72;
+  padding: 0.04em 0.09em 0 0;
+  color: hsl(var(--primary));
+}
+.dropcap {
+  text-indent: 0 !important;
+}
+
+/* Nota de margem (sidenote) */
+.sidenote {
+  font-family: "Hanken Grotesk", sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+@media (max-width: 1023px) {
+  .sidenote {
+    border-left: 2px solid hsl(var(--primary) / 0.5);
+    padding-left: 0.9rem;
+    margin: 0.25rem 0 1.6rem;
+  }
+}
+
+/* Pull quote */
+.pullquote {
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.7rem, 1.2rem + 2vw, 2.6rem);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  color: hsl(60 4% 10%);
+  text-wrap: balance;
+}
+
+/* Rótulo pequeno (byline, colophon) usado com parcimônia */
+.label {
+  font-family: "Hanken Grotesk", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
 /* Motion contido: respeitar reduced-motion globalmente */
 @media (prefers-reduced-motion: reduce) {
   *,
