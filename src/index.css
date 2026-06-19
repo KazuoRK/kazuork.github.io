@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&family=Hanken+Grotesk:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -36,7 +36,7 @@
     --book-cloth: 15 52% 58%;
   }
 
-  /* Variante escura quente (opcional) — slate, nunca #000 */
+  /* Variante escura quente (opcional): slate, nunca #000 */
   .dark {
     --background: 60 4% 8%;
     --foreground: 48 33% 95%;
@@ -72,8 +72,20 @@
 
 @layer utilities {
   .font-display {
-    font-family: "Fraunces", Georgia, "Times New Roman", serif;
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
     font-optical-sizing: auto;
+  }
+  /* sombras tingidas no tom clay (nunca preto puro sobre ivory) */
+  .shadow-warm {
+    box-shadow:
+      0 1px 2px hsl(14 35% 35% / 0.06),
+      0 4px 12px hsl(14 40% 35% / 0.07),
+      0 16px 40px hsl(14 40% 35% / 0.08);
+  }
+  .shadow-warm-sm {
+    box-shadow:
+      0 1px 2px hsl(14 35% 35% / 0.06),
+      0 2px 8px hsl(14 40% 35% / 0.06);
   }
   .text-clay {
     color: hsl(var(--primary));
