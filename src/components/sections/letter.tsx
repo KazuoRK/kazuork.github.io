@@ -16,11 +16,36 @@ function Block({ children, note }: { children: ReactNode; note?: ReactNode }) {
 export function Letter() {
   return (
     <article id="top" className="mx-auto max-w-5xl px-6 pb-24 pt-16 sm:pt-24">
+      {/* Frontispício: figura de abertura gravada (clay + tinta sobre papel
+          creme), gerada e tratada para a carta. Ver design-system/catalog. */}
+      <motion.figure
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.9, ease: EASE }}
+        className="mb-12 lg:max-w-[40rem]"
+      >
+        <div className="overflow-hidden rounded-md border border-border bg-card shadow-warm-sm">
+          <img
+            src="/figures/opening.jpg"
+            width={889}
+            height={506}
+            alt="Diagrama gravado de uma fagulha que irradia raios finos a partir de um núcleo coral, com órbitas tênues em tinta sobre papel creme."
+            className="block w-full"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+        <figcaption className="mt-3 font-sans text-[0.8rem] leading-relaxed text-muted-foreground">
+          Uma fagulha que irradia — gravada em coral e tinta sobre papel creme,
+          no espírito dos velhos diagramas.
+        </figcaption>
+      </motion.figure>
+
       {/* Cabeçalho do texto */}
       <motion.header
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: EASE }}
+        transition={{ duration: 0.8, ease: EASE, delay: 0.12 }}
         className="lg:grid lg:grid-cols-[minmax(0,40rem)_13rem] lg:gap-x-12"
       >
         <div>
