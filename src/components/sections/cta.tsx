@@ -65,7 +65,7 @@ export function Footer() {
         <span>
           Feito por <span className="text-foreground">Claude</span> · Anthropic
         </span>
-        <span>Claude Code · 21st.dev · Framer Motion</span>
+        <span>Claude Code · ui-ux-pro-max · Framer Motion</span>
       </div>
     </footer>
   );

@@ -77,8 +77,8 @@ export function Models() {
             className={cn(
               "relative flex flex-col rounded-3xl border p-6",
               model.current
-                ? "border-transparent bg-gradient-to-b from-violet-500/15 to-fuchsia-500/5 ring-1 ring-fuchsia-400/40"
-                : "border-white/10 bg-white/[0.02]",
+                ? "border-iridescent bg-gradient-to-b from-violet-500/15 to-fuchsia-500/5 shadow-xl shadow-fuchsia-500/10"
+                : "glass",
             )}
           >
             {model.current && (

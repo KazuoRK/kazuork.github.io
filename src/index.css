@@ -1,43 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Design system: ui-ux-pro-max → "Liquid Glass" + "Modern Dark (Cinema)"
+  Palette/tokens derived from the skill's design-system output for Claude.
+  Deep blacks (no pure #000), translucent glass surfaces, iridescent accents.
+*/
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.75rem;
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --background: 240 10% 4%;
+    --foreground: 240 9% 93%;
+    --card: 240 9% 6%;
+    --card-foreground: 240 9% 93%;
+    --primary: 240 9% 96%;
+    --primary-foreground: 240 10% 6%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 240 9% 93%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 225 7% 60%;
+    --accent: 232 56% 60%;
+    --accent-foreground: 0 0% 100%;
+    --border: 240 6% 16%;
+    --input: 240 6% 16%;
+    --ring: 232 56% 60%;
+    --radius: 1rem;
   }
 }
 
@@ -45,87 +34,70 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-family:
-      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
-      Arial, sans-serif;
-  }
   html {
     scroll-behavior: smooth;
   }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
   ::selection {
-    background: hsl(280 90% 60% / 0.3);
+    background: hsl(280 90% 65% / 0.35);
   }
 }
 
 @layer utilities {
-  /* Grid sutil com fade radial */
-  .bg-grid {
-    background-image: linear-gradient(
-        to right,
-        hsl(var(--border)) 1px,
-        transparent 1px
-      ),
-      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
-    background-size: 56px 56px;
-    -webkit-mask-image: radial-gradient(
-      ellipse 70% 60% at 50% 0%,
-      black,
-      transparent
-    );
-    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black, transparent);
+  /* Superfície de vidro líquido: blur + saturação + borda fina */
+  .glass {
+    background: hsl(0 0% 100% / 0.04);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid hsl(0 0% 100% / 0.08);
+  }
+  .glass-strong {
+    background: hsl(0 0% 100% / 0.06);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid hsl(0 0% 100% / 0.1);
   }
 
-  /* Texto com gradiente clipado */
+  /* Texto com gradiente clipado (neutro premium) */
   .text-gradient {
     @apply bg-gradient-to-b from-foreground to-foreground/55 bg-clip-text text-transparent;
   }
-  .text-aurora {
+
+  /* Texto iridescente animado (assinatura do Liquid Glass) */
+  .text-iridescent {
     background-image: linear-gradient(
       110deg,
-      #c084fc,
+      #a78bfa,
       #f0abfc,
       #818cf8,
-      #22d3ee,
-      #c084fc
+      #5eead4,
+      #a78bfa
     );
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: text-shimmer 6s linear infinite;
+    animation: shimmer 7s linear infinite;
   }
 
-  .glass {
-    @apply border border-white/10 bg-white/[0.03] backdrop-blur-xl;
+  .border-iridescent {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(110deg, #a78bfa, #f0abfc, #818cf8, #5eead4) border-box;
   }
 
   .animate-marquee {
-    animation: marquee 32s linear infinite;
+    animation: marquee 36s linear infinite;
   }
 }
 
-/* Aurora orbs flutuando no fundo */
-@keyframes aurora-1 {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(8%, 6%) scale(1.15);
-  }
-}
-@keyframes aurora-2 {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) translate(0, 0) scale(1.1);
-  }
-  50% {
-    transform: translate(-50%, -50%) translate(-10%, -8%) scale(0.95);
-  }
-}
-@keyframes text-shimmer {
+/* ---- Keyframes ---- */
+@keyframes shimmer {
   to {
     background-position: 200% center;
   }
@@ -135,6 +107,25 @@
     transform: translateX(-50%);
   }
 }
+/* Blobs de luz ambiente (morphing lento 400-600ms curves, loop longo) */
+@keyframes blob-1 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(7%, 5%) scale(1.15);
+  }
+}
+@keyframes blob-2 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0) scale(1.1);
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(-9%, -7%) scale(0.92);
+  }
+}
 @keyframes float {
   0%,
   100% {
@@ -142,5 +133,16 @@
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

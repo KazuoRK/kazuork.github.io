@@ -17,7 +17,7 @@ export function Navbar() {
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4"
     >
-      <nav className="glass flex w-full max-w-3xl items-center justify-between rounded-full px-5 py-2.5 shadow-lg shadow-black/20">
+      <nav className="glass-strong flex w-full max-w-3xl items-center justify-between rounded-full px-5 py-2.5 shadow-lg shadow-black/30">
         <a href="#top" className="flex items-center gap-2 font-semibold">
           <span className="grid size-7 place-items-center rounded-full bg-gradient-to-tr from-violet-500 to-fuchsia-500">
             <Sparkles className="size-4 text-white" />

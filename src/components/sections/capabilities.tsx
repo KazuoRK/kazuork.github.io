@@ -75,9 +75,10 @@ function Card({ cap }: { cap: Capability }) {
   return (
     <motion.div
       variants={item}
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 300, damping: 24 }}
       className={cn(
-        "group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6 transition-colors hover:border-white/20",
+        "group glass relative overflow-hidden rounded-3xl p-6 transition-colors hover:border-white/20",
         cap.className,
       )}
     >
