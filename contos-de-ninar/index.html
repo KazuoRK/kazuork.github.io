@@ -115,6 +115,8 @@
   }
   .brand h1 { font-size: 34px; line-height: 1.1; }
   .tagline { color: var(--ink-2); font-size: 15px; max-width: 46ch; }
+  .test-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .test-row .hint { max-width: 40ch; }
 
   /* ---------- Sections ---------- */
   .section { margin-top: 30px; }
@@ -322,6 +324,8 @@
 <div class="lamp-glow" aria-hidden="true"></div>
 
 <main class="app" id="app">
+  <div id="audio-alerta" class="notice erro" hidden role="alert"></div>
+
   <!-- ===================== TELA 1: MONTAR A HISTÓRIA ===================== -->
   <div id="view-setup">
     <header class="top">
@@ -330,6 +334,10 @@
         <h1>Contos de Ninar</h1>
       </div>
       <p class="tagline">Você escolhe quem entra na história e onde ela acontece. Cada personagem ganha a própria voz, e a narração vai ficando mais lenta até o sono chegar.</p>
+      <div class="test-row">
+        <button type="button" class="btn btn-sm" id="btn-testar-som">🔊 Testar o som</button>
+        <span class="hint" id="teste-resultado"></span>
+      </div>
     </header>
 
     <div id="aviso-modo" class="notice" hidden></div>
@@ -469,6 +477,7 @@
           <div class="voice-list" id="voice-list" style="margin-top:6px"></div>
         </div>
         <ul>
+          <li><strong>Sem som nenhum?</strong> Toque em <em>Testar o som</em> lá em cima. Dentro do claude.ai a janelinha do app às vezes bloqueia a leitura em voz alta; abrir em uma aba própria resolve.</li>
           <li><strong>Computador:</strong> o Microsoft Edge traz várias vozes neurais em português do Brasil (Francisca, Antônio, Thalita…), que soam bem mais naturais.</li>
           <li><strong>Android:</strong> em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale vozes de português do Brasil.</li>
           <li><strong>iPhone e iPad:</strong> em Ajustes › Acessibilidade › Conteúdo Falado › Vozes › Português, baixe vozes aprimoradas.</li>
@@ -742,6 +751,61 @@
     setTimeout(() => { Voices.refresh(); renderVoiceInfo(); if (Player.h) { assignVoices(Player.h); renderCast(); } }, 800);
   }
 
+  /* =========================================================
+     SOM: destravar, vigiar e explicar quando não sai voz
+     ========================================================= */
+  const emIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+
+  const ERROS_SOM = {
+    'not-allowed': 'O navegador bloqueou a leitura em voz alta dentro desta janela.',
+    'synthesis-failed': 'Este aparelho não conseguiu gerar a voz.',
+    'synthesis-unavailable': 'Este aparelho não tem voz de leitura disponível.',
+    'language-unavailable': 'Não há voz em português instalada neste aparelho.',
+    'voice-unavailable': 'A voz escolhida não está mais disponível.',
+    'audio-busy': 'Outro som está ocupando o alto-falante.',
+    'audio-hardware': 'O navegador não encontrou saída de som.',
+    'network': 'Esta voz precisa de internet e a conexão falhou.',
+    semvoz: 'Não há nenhuma voz de leitura instalada neste navegador.',
+    mudo: 'O navegador aceitou o pedido, mas nenhum som começou.',
+  };
+
+  const Som = {
+    primed: false, ouviu: false, ultimoErro: null, avisado: null, hb: null,
+    // iOS e Chrome só liberam a fala se um speak() sair de dentro do toque.
+    prime() {
+      if (!Voices.ok || this.primed) return;
+      this.primed = true;
+      try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.rate = 2; u.lang = 'pt-BR'; speechSynthesis.speak(u); } catch { /* sem suporte */ }
+    },
+    batida() { // o Chrome adormece a fila em falas longas
+      clearInterval(this.hb);
+      this.hb = setInterval(() => { if (Player.playing && Voices.ok && speechSynthesis.paused) speechSynthesis.resume(); }, 6000);
+    },
+    parar() { clearInterval(this.hb); this.hb = null; },
+    ok() { this.ouviu = true; this.ultimoErro = null; this.avisado = null; $('#audio-alerta').hidden = true; },
+    erro(code) {
+      if (code === 'interrupted' || code === 'canceled') return; // veio do nosso próprio cancel
+      this.ultimoErro = code;
+      if (!this.ouviu) this.alerta(code);
+    },
+    alerta(code) {
+      if (this.avisado === code) return;
+      this.avisado = code;
+      const causa = ERROS_SOM[code] || 'A voz não começou neste navegador.';
+      const podeAba = emIframe && (code === 'not-allowed' || code === 'mudo' || code === 'audio-busy');
+      const dica = podeAba
+        ? 'Dentro do claude.ai a janelinha do app pode bloquear a voz. Abra em uma aba própria e toque em ▶ de novo.'
+        : 'Instale uma voz em português no aparelho, ou abra no Microsoft Edge, que já vem com vozes brasileiras. O texto de cada fala continua aparecendo na tela para você ler.';
+      const el = $('#audio-alerta');
+      el.innerHTML = `<strong>Sem som.</strong> ${esc(causa)} ${esc(dica)}` +
+        (podeAba ? ' <button type="button" class="btn btn-sm" id="btn-nova-aba" style="margin-top:10px">Abrir em nova aba</button>' : '') +
+        `<br><span style="font-size:12px;opacity:.75">código: ${esc(code)} · vozes: ${Voices.all.length} (${Voices.pt.length} em português)</span>`;
+      el.hidden = false;
+      const b = $('#btn-nova-aba');
+      if (b) b.onclick = () => { try { window.open(location.href, '_blank', 'noopener'); } catch { /* pop-up bloqueado */ } };
+    },
+  };
+
   function renderVoiceInfo() {
     const sum = $('#voice-summary'); const list = $('#voice-list');
     if (!Voices.ok) { sum.textContent = 'Este navegador não tem leitura em voz alta. Dá para acompanhar o texto e ler para a criança.'; list.innerHTML = ''; return; }
@@ -840,9 +904,12 @@
       if (p.voice) u.voice = p.voice;
       u.lang = (p.voice && p.voice.lang) || 'pt-BR';
       u.rate = p.rate; u.pitch = p.pitch; u.volume = p.volume;
-      let done = false;
-      const fim = () => { if (done) return; done = true; clearTimeout(t); const k = Player.keep.indexOf(u); if (k >= 0) Player.keep.splice(k, 1); resolve(); };
-      u.onend = fim; u.onerror = fim;
+      let done = false, mudo = null;
+      const fim = () => { if (done) return; done = true; clearTimeout(t); clearTimeout(mudo); const k = Player.keep.indexOf(u); if (k >= 0) Player.keep.splice(k, 1); resolve(); };
+      u.onstart = () => { clearTimeout(mudo); Som.ok(); };
+      u.onend = fim;
+      u.onerror = (ev) => { Som.erro((ev && ev.error) || 'desconhecido'); fim(); };
+      mudo = setTimeout(() => { if (!Som.ouviu) Som.erro('mudo'); }, 2500); // aceitou e não falou
       const t = setTimeout(fim, estimaMs(texto, p.rate) + 5000); // vigia: se o navegador engasgar, seguimos
       Player.keep.push(u); // referência viva: sem isso o Chrome às vezes não dispara onend
       if (run !== Player.runId) { fim(); return; }
@@ -872,14 +939,15 @@
       assignVoices(h);
       renderPlayer();
     },
-    stopSpeech() { this.runId++; if (Voices.ok) speechSynthesis.cancel(); this.playing = false; },
+    stopSpeech() { this.runId++; if (Voices.ok) speechSynthesis.cancel(); this.playing = false; Som.parar(); },
     async play(from) {
       if (!this.h) return;
       if (Number.isInteger(from)) this.i = clamp(from, 0, this.h.falas.length - 1);
       if (this.terminou && !Number.isInteger(from)) { this.i = 0; this.terminou = false; }
       this.stopSpeech();
       const run = ++this.runId;
-      this.playing = true; updateDock();
+      this.playing = true; updateDock(); Som.batida();
+      if (Voices.ok && speechSynthesis.paused) speechSynthesis.resume();
       await sleep(60); // o Chrome ignora speak() colado num cancel()
       if (run !== this.runId) return;
       for (; this.i < this.h.falas.length; this.i++) {
@@ -1252,17 +1320,38 @@
     if (b.dataset.act === 'apagar') { Store.remove(id); renderBiblioteca(); }
   });
 
+  $('#btn-testar-som').addEventListener('click', () => {
+    const res = $('#teste-resultado');
+    if (!Voices.ok) { res.textContent = 'Este navegador não lê em voz alta.'; Som.alerta('semvoz'); return; }
+    Voices.refresh(); renderVoiceInfo();
+    if (!Voices.all.length) { res.textContent = 'Nenhuma voz instalada neste aparelho.'; Som.alerta('semvoz'); return; }
+    const v = Voices.pt[0] || Voices.all[0];
+    Som.avisado = null;
+    res.textContent = 'Tocando…';
+    const u = new SpeechSynthesisUtterance('Boa noite! Está me ouvindo?');
+    u.voice = v; u.lang = v.lang || 'pt-BR'; u.rate = 0.95;
+    u.onstart = () => { Som.ok(); res.textContent = `Falando com a voz ${Voices.label(v)}.`; };
+    u.onend = () => { if (Som.ouviu) res.textContent = `Som funcionando · voz ${Voices.label(v)}.`; };
+    u.onerror = (ev) => { const c = (ev && ev.error) || 'desconhecido'; res.textContent = `Falhou (${c}).`; Som.erro(c); };
+    Player.keep.push(u);
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    speechSynthesis.speak(u); // no mesmo toque: é o que destrava o iPhone
+    setTimeout(() => { if (!Som.ouviu) { res.textContent = 'Nenhum som começou.'; Som.erro('mudo'); } }, 2500);
+  });
+
   $('#btn-voltar').addEventListener('click', () => showView('setup'));
-  $('#btn-play').addEventListener('click', () => Player.toggle());
-  $('#btn-prev').addEventListener('click', () => Player.prev());
-  $('#btn-next').addEventListener('click', () => Player.next());
-  $('#btn-reiniciar').addEventListener('click', () => { Player.terminou = false; Player.play(0); });
+  $('#btn-play').addEventListener('click', () => { Som.prime(); Player.toggle(); });
+  $('#btn-prev').addEventListener('click', () => { Som.prime(); Player.prev(); });
+  $('#btn-next').addEventListener('click', () => { Som.prime(); Player.next(); });
+  $('#btn-reiniciar').addEventListener('click', () => { Som.prime(); Player.terminou = false; Player.play(0); });
   $('#soninho').addEventListener('change', (ev) => { Player.soninho = ev.target.checked; });
-  $('#script').addEventListener('click', (ev) => { const li = ev.target.closest('li[data-i]'); if (li) Player.play(Number(li.dataset.i)); });
+  $('#script').addEventListener('click', (ev) => { const li = ev.target.closest('li[data-i]'); if (li) { Som.prime(); Player.play(Number(li.dataset.i)); } });
   $('#script').addEventListener('keydown', (ev) => { const li = ev.target.closest('li[data-i]'); if (li && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); Player.play(Number(li.dataset.i)); } });
   $('#cast-panel').addEventListener('click', (ev) => {
     const b = ev.target.closest('button[data-act]'); if (!b) return;
     const nome = b.closest('.cast-row').dataset.nome;
+    Som.prime();
     if (b.dataset.act === 'ouvir') Player.preview(nome);
     if (b.dataset.act === 'trocar') Player.trocarVoz(nome);
   });

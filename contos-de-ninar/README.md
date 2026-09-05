@@ -79,6 +79,7 @@ Detalhes de robustez: as falas são divididas em trechos de até 180 caracteres 
 - **Sem sussurro de verdade.** A Web Speech API não tem SSML nem estilos; o sussurro é simulado com volume baixo e voz mais lenta.
 - **Gera histórias só dentro do claude.ai** (capacidade `sample` do runtime de Artifacts). A versão pública precisa de backend com a chave da API.
 - **Biblioteca local.** As histórias ficam no `localStorage` do navegador, não sincronizam entre aparelhos.
+- **O navegador pode bloquear a voz.** Dentro de um iframe (o visualizador de Artifacts do claude.ai) o Chrome pode recusar a leitura em voz alta com o erro `not-allowed`, e um aparelho sem vozes instaladas devolve `synthesis-failed`. O app agora mostra o motivo na tela, com o código do erro e a contagem de vozes, e oferece abrir em uma aba própria. O botão *Testar o som* no topo verifica isso em um toque, antes de a criança estar na cama.
 - **Sem áudio em segundo plano.** Com a tela apagada, o navegador pode pausar a fala; um app nativo (Capacitor) resolve isso.
 
 ## Plano para o app de verdade
