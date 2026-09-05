@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="description" content="Histórias para dormir com uma voz para cada personagem. Os pais escolhem personagens e cenário; a narração acalma até o sono chegar.">
+<title>Contos de Ninar</title>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alice&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+  /* ---------- Tokens: dark-first (quarto escuro, luz de abajur) ---------- */
+  :root {
+    color-scheme: dark;
+    --sky: #10152b;
+    --sky-2: #181f3d;
+    --sky-3: #222b52;
+    --ink: #eef0fa;
+    --ink-2: #b4bbdc;
+    --ink-3: #8089b3;
+    --lamp: #f2b96b;
+    --lamp-ink: #2a1a05;
+    --lamp-soft: rgba(242, 185, 107, 0.16);
+    --lamp-glow: rgba(242, 185, 107, 0.22);
+    --moon: #cfd8ff;
+    --line: rgba(207, 216, 255, 0.14);
+    --line-strong: rgba(207, 216, 255, 0.28);
+    --bad: #f0857f;
+    --shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+    --stars: 1;
+    --radius: 18px;
+    --radius-s: 12px;
+    --font-ui: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-book: "Alice", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --sky: #eef1f8;
+      --sky-2: #ffffff;
+      --sky-3: #e2e7f3;
+      --ink: #1b2140;
+      --ink-2: #4c5578;
+      --ink-3: #7d86ab;
+      --lamp: #b86f12;
+      --lamp-ink: #ffffff;
+      --lamp-soft: rgba(184, 111, 18, 0.12);
+      --lamp-glow: rgba(242, 185, 107, 0.35);
+      --moon: #3b4a8f;
+      --line: rgba(27, 33, 64, 0.12);
+      --line-strong: rgba(27, 33, 64, 0.26);
+      --bad: #b8433f;
+      --shadow: 0 12px 34px rgba(27, 33, 64, 0.10);
+      --stars: 0;
+    }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --sky: #eef1f8;
+    --sky-2: #ffffff;
+    --sky-3: #e2e7f3;
+    --ink: #1b2140;
+    --ink-2: #4c5578;
+    --ink-3: #7d86ab;
+    --lamp: #b86f12;
+    --lamp-ink: #ffffff;
+    --lamp-soft: rgba(184, 111, 18, 0.12);
+    --lamp-glow: rgba(242, 185, 107, 0.35);
+    --moon: #3b4a8f;
+    --line: rgba(27, 33, 64, 0.12);
+    --line-strong: rgba(27, 33, 64, 0.26);
+    --bad: #b8433f;
+    --shadow: 0 12px 34px rgba(27, 33, 64, 0.10);
+    --stars: 0;
+  }
+
+  /* ---------- Base ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--sky);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--lamp); outline-offset: 2px; border-radius: 6px; }
+  h1, h2, h3 { font-family: var(--font-book); font-weight: 400; margin: 0; text-wrap: balance; letter-spacing: 0.005em; }
+  p { margin: 0; }
+
+  #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: var(--stars); transition: opacity .4s; }
+  .lamp-glow {
+    position: fixed; left: 50%; bottom: -30vh; width: 120vw; height: 70vh; transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, var(--lamp-glow) 0%, transparent 60%);
+    z-index: 0; pointer-events: none;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 640px; margin: 0 auto; padding: 22px 16px 40px; }
+  .app.has-dock { padding-bottom: 170px; }
+
+  /* ---------- Header ---------- */
+  .top { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-moon {
+    width: 44px; height: 44px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 35% 35%, #fff3d6, var(--lamp) 60%, #c98a33 100%);
+    box-shadow: 0 0 0 6px var(--lamp-soft), 0 0 40px var(--lamp-glow);
+  }
+  .brand h1 { font-size: 34px; line-height: 1.1; }
+  .tagline { color: var(--ink-2); font-size: 15px; max-width: 46ch; }
+
+  /* ---------- Sections ---------- */
+  .section { margin-top: 30px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .section-head h2 { font-size: 24px; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .hint { color: var(--ink-3); font-size: 13px; }
+  .lede { color: var(--ink-2); font-size: 14px; margin-bottom: 12px; max-width: 60ch; }
+
+  /* ---------- Character cards ---------- */
+  .grid-cast { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (min-width: 520px) { .grid-cast { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .cast-card {
+    position: relative; text-align: left; display: flex; flex-direction: column; gap: 8px;
+    padding: 14px 14px 12px; border-radius: var(--radius); border: 1.5px solid var(--line);
+    background: var(--sky-2); transition: border-color .15s, transform .15s, background .15s;
+  }
+  .cast-card:hover { border-color: var(--line-strong); }
+  .cast-card[aria-pressed="true"] { border-color: var(--lamp); background: color-mix(in srgb, var(--sky-2) 85%, var(--lamp) 15%); }
+  .cast-card[aria-pressed="true"]::after {
+    content: "✓"; position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--lamp); color: var(--lamp-ink); font-size: 13px; font-weight: 800; display: grid; place-items: center;
+  }
+  .cast-card:disabled { opacity: .45; cursor: not-allowed; }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%; background: var(--sky-3); display: grid; place-items: center;
+    font-size: 26px; line-height: 1; flex: none;
+  }
+  .cast-card .nome { font-family: var(--font-book); font-size: 19px; line-height: 1.15; }
+  .cast-card .desc { font-size: 13px; color: var(--ink-2); line-height: 1.35; min-height: 2.7em; }
+  .voz-tag { font-size: 11.5px; font-weight: 700; color: var(--ink-3); letter-spacing: .02em; }
+  .cast-card.add { justify-content: center; align-items: center; text-align: center; border-style: dashed; min-height: 150px; color: var(--ink-2); font-weight: 700; }
+  .cast-card.add .plus { font-size: 30px; color: var(--lamp); line-height: 1; }
+  .cast-card .remover { position: absolute; top: 8px; left: 8px; border: 0; background: transparent; color: var(--ink-3); font-size: 15px; padding: 2px 6px; border-radius: 6px; }
+  .cast-card .remover:hover { color: var(--bad); }
+
+  .form-inline { margin-top: 12px; padding: 16px; border-radius: var(--radius); background: var(--sky-2); border: 1.5px solid var(--line); display: grid; gap: 12px; }
+  .form-row { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 420px) { .form-row { grid-template-columns: 1fr; } }
+  .emoji-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .emoji-pick button { width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--sky-3); font-size: 22px; }
+  .emoji-pick button[aria-pressed="true"] { border-color: var(--lamp); box-shadow: 0 0 0 3px var(--lamp-soft); }
+
+  /* ---------- Fields ---------- */
+  .field { display: grid; gap: 6px; }
+  .field label, .field .label { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .field input[type="text"], .field textarea, .field select {
+    width: 100%; padding: 11px 13px; border-radius: var(--radius-s); border: 1.5px solid var(--line);
+    background: var(--sky-2); color: var(--ink); outline: none;
+  }
+  .field input[type="text"]:focus, .field textarea:focus, .field select:focus { border-color: var(--lamp); box-shadow: 0 0 0 3px var(--lamp-soft); }
+  .field textarea { resize: vertical; min-height: 58px; }
+  .field ::placeholder { color: var(--ink-3); }
+
+  .child-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+  @media (max-width: 460px) { .child-row { grid-template-columns: 1fr; } }
+
+  .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--ink-2); user-select: none; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch .track { width: 42px; height: 24px; border-radius: 999px; background: var(--sky-3); border: 1.5px solid var(--line); position: relative; transition: background .15s; flex: none; }
+  .switch .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--ink-3); transition: transform .15s, background .15s; }
+  .switch input:checked + .track { background: var(--lamp); border-color: var(--lamp); }
+  .switch input:checked + .track::after { transform: translateX(18px); background: var(--lamp-ink); }
+  .switch input:focus-visible + .track { outline: 3px solid var(--lamp); outline-offset: 2px; }
+
+  /* ---------- Chips & segmented ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1.5px solid var(--line); background: var(--sky-2); color: var(--ink); border-radius: 999px;
+    padding: 8px 14px; font-size: 14px; font-weight: 600; transition: border-color .15s, background .15s;
+  }
+  .chip:hover { border-color: var(--line-strong); }
+  .chip[aria-pressed="true"] { background: var(--lamp); border-color: var(--lamp); color: var(--lamp-ink); }
+  .chip small { display: block; font-weight: 400; font-size: 12px; opacity: .8; }
+
+  .seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px; background: var(--sky-2); padding: 3px; gap: 2px; max-width: 100%; }
+  .seg button { border: 0; background: transparent; border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: var(--sky-3); color: var(--ink); }
+  .seg button small { font-weight: 600; color: var(--ink-3); margin-left: 4px; }
+
+  .two-col { display: grid; gap: 18px; grid-template-columns: 1fr 1fr; align-items: start; }
+  @media (max-width: 520px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px;
+    padding: 12px 20px; border: 1.5px solid var(--line-strong); background: var(--sky-2); color: var(--ink);
+    font-weight: 800; font-size: 15px; transition: transform .1s, filter .15s;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+  .btn-primary { background: var(--lamp); border-color: var(--lamp); color: var(--lamp-ink); padding: 16px 26px; font-size: 17px; box-shadow: 0 8px 26px var(--lamp-glow); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); padding: 8px 12px; }
+  .btn-ghost:hover { color: var(--ink); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; }
+
+  .cta { margin-top: 32px; display: grid; gap: 10px; justify-items: center; text-align: center; }
+  .cta .hint { max-width: 40ch; }
+
+  /* ---------- Generating panel ---------- */
+  .gen {
+    margin-top: 24px; padding: 22px 20px; border-radius: var(--radius); background: var(--sky-2); border: 1.5px solid var(--line);
+    display: grid; gap: 12px; justify-items: center; text-align: center; box-shadow: var(--shadow);
+  }
+  .gen .pulse { width: 54px; height: 54px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3d6, var(--lamp) 60%, #c98a33 100%); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--lamp-soft), 0 0 30px var(--lamp-glow); } 50% { box-shadow: 0 0 0 16px transparent, 0 0 60px var(--lamp-glow); } }
+  @media (prefers-reduced-motion: reduce) { .gen .pulse { animation: none; } }
+  .gen h3 { font-size: 22px; }
+  .gen .preview { font-family: var(--font-book); color: var(--ink-2); font-size: 16px; max-width: 52ch; min-height: 1.5em; font-style: italic; }
+  .gen .contador { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+  .notice { margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-s); background: var(--lamp-soft); color: var(--ink); font-size: 14px; border: 1px solid transparent; }
+  .notice.erro { background: color-mix(in srgb, var(--bad) 16%, transparent); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+
+  /* ---------- Library ---------- */
+  .lib { display: grid; gap: 10px; }
+  .lib-item {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px 14px; align-items: center;
+    padding: 14px 16px; border-radius: var(--radius); background: var(--sky-2); border: 1.5px solid var(--line);
+  }
+  .lib-item .titulo { font-family: var(--font-book); font-size: 19px; line-height: 1.2; }
+  .lib-item .meta { font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+  .lib-item .faces { font-size: 18px; letter-spacing: 2px; margin-top: 4px; }
+  .lib-item .acoes { display: flex; gap: 6px; align-items: center; }
+  .lib-empty { color: var(--ink-3); font-size: 14px; padding: 6px 2px; }
+
+  /* ---------- How it works ---------- */
+  details.como { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 14px; color: var(--ink-2); font-size: 14px; }
+  details.como summary { cursor: pointer; font-weight: 800; color: var(--ink); list-style: none; display: flex; align-items: center; gap: 8px; }
+  details.como summary::-webkit-details-marker { display: none; }
+  details.como summary::before { content: "▸"; color: var(--lamp); transition: transform .15s; }
+  details.como[open] summary::before { transform: rotate(90deg); }
+  details.como .body { display: grid; gap: 10px; margin-top: 12px; max-width: 62ch; }
+  details.como ul { margin: 0; padding-left: 18px; }
+  details.como li { margin: 4px 0; }
+  .voice-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .voice-list span { font-size: 12px; padding: 4px 9px; border-radius: 999px; background: var(--sky-3); color: var(--ink-2); }
+
+  /* ---------- Player ---------- */
+  .player-top { display: flex; flex-direction: column; gap: 10px; }
+  .player-top .voltar { align-self: flex-start; }
+  .player-top h2 { font-size: 30px; line-height: 1.15; }
+  .player-top .resumo { color: var(--ink-2); font-size: 15px; max-width: 56ch; }
+
+  .cast-panel { margin-top: 8px; display: grid; gap: 8px; }
+  .cast-row {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+    padding: 10px 12px; border-radius: var(--radius-s); background: var(--sky-2); border: 1.5px solid var(--line);
+  }
+  .cast-row .avatar { width: 40px; height: 40px; font-size: 22px; }
+  .cast-row .nome { font-family: var(--font-book); font-size: 17px; }
+  .cast-row .voz { font-size: 12.5px; color: var(--ink-3); }
+  .cast-row .acoes { display: flex; gap: 6px; }
+  .cast-row.falando { border-color: var(--lamp); }
+
+  .stage {
+    margin-top: 22px; padding: 26px 22px 24px; border-radius: 24px; background: var(--sky-2); border: 1.5px solid var(--line);
+    box-shadow: var(--shadow); min-height: 190px; display: grid; gap: 14px; align-content: start;
+  }
+  .stage .quem { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 14px; color: var(--ink-2); }
+  .stage .quem .avatar { width: 34px; height: 34px; font-size: 19px; }
+  .stage .emo { font-size: 12px; font-weight: 700; color: var(--ink-3); padding: 3px 9px; border-radius: 999px; background: var(--sky-3); text-transform: lowercase; }
+  .stage .texto { font-family: var(--font-book); font-size: 24px; line-height: 1.4; color: var(--ink); }
+  .stage .texto.pequeno { font-size: 19px; color: var(--ink-2); }
+  @media (max-width: 420px) { .stage .texto { font-size: 21px; } }
+
+  .script { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 4px; }
+  .script li {
+    display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: var(--radius-s);
+    color: var(--ink-2); opacity: .62; cursor: pointer; transition: opacity .15s, background .15s;
+  }
+  .script li:hover { opacity: .9; }
+  .script li .mini { width: 30px; height: 30px; border-radius: 50%; background: var(--sky-3); display: grid; place-items: center; font-size: 16px; }
+  .script li .mini.narr { font-family: var(--font-book); font-size: 13px; color: var(--ink-3); }
+  .script li .fala { font-family: var(--font-book); font-size: 17px; line-height: 1.4; }
+  .script li .fala b { font-family: var(--font-ui); font-weight: 800; font-size: 12px; color: var(--ink-3); display: block; letter-spacing: .02em; }
+  .script li.atual { opacity: 1; background: var(--lamp-soft); color: var(--ink); }
+  .script li.lida { opacity: .45; }
+
+  /* ---------- Dock ---------- */
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: color-mix(in srgb, var(--sky) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line);
+  }
+  .dock-inner { max-width: 640px; margin: 0 auto; padding: 10px 16px 14px; display: grid; gap: 10px; }
+  .progress { height: 4px; border-radius: 999px; background: var(--sky-3); overflow: hidden; }
+  .progress > div { height: 100%; width: 0%; background: var(--lamp); transition: width .3s; }
+  .controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+  .controls .left { display: flex; justify-content: flex-start; }
+  .controls .right { display: flex; justify-content: flex-end; }
+  .transport { display: flex; align-items: center; gap: 14px; }
+  .round { width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--sky-2); display: grid; place-items: center; }
+  .round svg { width: 20px; height: 20px; fill: currentColor; }
+  .round.big { width: 64px; height: 64px; background: var(--lamp); border-color: var(--lamp); color: var(--lamp-ink); box-shadow: 0 8px 26px var(--lamp-glow); }
+  .round.big svg { width: 26px; height: 26px; }
+  .round:disabled { opacity: .4; }
+  .dock .status { font-size: 12.5px; color: var(--ink-3); text-align: center; font-variant-numeric: tabular-nums; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="lamp-glow" aria-hidden="true"></div>
+
+<main class="app" id="app">
+  <!-- ===================== TELA 1: MONTAR A HISTÓRIA ===================== -->
+  <div id="view-setup">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-moon" aria-hidden="true"></div>
+        <h1>Contos de Ninar</h1>
+      </div>
+      <p class="tagline">Você escolhe quem entra na história e onde ela acontece. Cada personagem ganha a própria voz, e a narração vai ficando mais lenta até o sono chegar.</p>
+    </header>
+
+    <div id="aviso-modo" class="notice" hidden></div>
+
+    <section class="section" aria-labelledby="h-crianca">
+      <div class="section-head">
+        <h2 id="h-crianca">Quem vai ouvir?</h2>
+        <span class="hint">opcional</span>
+      </div>
+      <div class="child-row">
+        <div class="field">
+          <label for="crianca">Nome da criança</label>
+          <input type="text" id="crianca" placeholder="Ex.: Sofia" maxlength="30" autocomplete="off">
+        </div>
+        <div class="field">
+          <span class="label" id="l-pronome">Na história, falamos</span>
+          <div class="seg" role="group" aria-labelledby="l-pronome" id="seg-pronome">
+            <button type="button" data-v="ela" aria-pressed="true">ela</button>
+            <button type="button" data-v="ele" aria-pressed="false">ele</button>
+          </div>
+        </div>
+      </div>
+      <label class="switch" style="margin-top:12px">
+        <input type="checkbox" id="crianca-participa" checked>
+        <span class="track" aria-hidden="true"></span>
+        <span>A criança entra na história como personagem</span>
+      </label>
+    </section>
+
+    <section class="section" aria-labelledby="h-personagens">
+      <div class="section-head">
+        <h2 id="h-personagens">Personagens</h2>
+        <span class="hint" id="cast-count">escolha até 3</span>
+      </div>
+      <div class="grid-cast" id="grid-cast"></div>
+      <div class="form-inline" id="form-custom" hidden>
+        <div class="form-row">
+          <div class="field">
+            <label for="c-nome">Nome</label>
+            <input type="text" id="c-nome" placeholder="Ex.: Tobias" maxlength="24">
+          </div>
+          <div class="field">
+            <span class="label">Carinha</span>
+            <div class="emoji-pick" id="c-emoji"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="c-desc">Quem é</label>
+          <input type="text" id="c-desc" placeholder="Ex.: um filhote de raposa que tem medo de trovão" maxlength="90">
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="c-tom">Voz</label>
+            <select id="c-tom">
+              <option value="grave">grave (grandão, calmo)</option>
+              <option value="medio" selected>média</option>
+              <option value="agudo">aguda (pequenininho, animado)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="c-ritmo">Jeito de falar</label>
+            <select id="c-ritmo">
+              <option value="lento">devagar</option>
+              <option value="normal" selected>normal</option>
+              <option value="rapido">rápido</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-ghost" id="c-cancelar">Cancelar</button>
+          <button type="button" class="btn" id="c-salvar">Adicionar personagem</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="h-cenario">
+      <div class="section-head">
+        <h2 id="h-cenario">Onde a história acontece</h2>
+      </div>
+      <div class="chips" id="chips-cenario" role="group" aria-label="Cenário"></div>
+    </section>
+
+    <section class="section" aria-labelledby="h-tema">
+      <div class="section-head">
+        <h2 id="h-tema">Uma lição escondida</h2>
+        <span class="hint">sem sermão</span>
+      </div>
+      <div class="chips" id="chips-tema" role="group" aria-label="Tema"></div>
+    </section>
+
+    <section class="section">
+      <div class="two-col">
+        <div class="field">
+          <span class="label" id="l-idade">Idade</span>
+          <div class="seg" role="group" aria-labelledby="l-idade" id="seg-idade"></div>
+        </div>
+        <div class="field">
+          <span class="label" id="l-duracao">Tamanho</span>
+          <div class="seg" role="group" aria-labelledby="l-duracao" id="seg-duracao"></div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:18px">
+        <label for="extra">Algo especial de hoje? <span class="hint">(opcional)</span></label>
+        <textarea id="extra" rows="2" maxlength="240" placeholder="Ex.: hoje ela aprendeu a andar de bicicleta e está com medo de ir ao dentista amanhã"></textarea>
+      </div>
+    </section>
+
+    <div class="cta" id="cta">
+      <button type="button" class="btn btn-primary" id="btn-gerar">Criar a história de hoje</button>
+      <p class="hint" id="cta-hint">Escrita pelo Claude na sua conta. Leva por volta de um minuto.</p>
+    </div>
+
+    <div class="gen" id="gen" hidden aria-live="polite">
+      <div class="pulse" aria-hidden="true"></div>
+      <h3 id="gen-titulo">Pensando na história…</h3>
+      <p class="preview" id="gen-preview">Escolhendo o começo, o meio e o fim.</p>
+      <p class="contador" id="gen-contador"></p>
+      <button type="button" class="btn btn-sm" id="btn-parar">Parar</button>
+    </div>
+    <div id="gen-erro" class="notice erro" hidden role="alert"></div>
+
+    <section class="section" aria-labelledby="h-lib">
+      <div class="section-head">
+        <h2 id="h-lib">Biblioteca</h2>
+        <span class="hint">salvas neste aparelho</span>
+      </div>
+      <div class="lib" id="lib"></div>
+    </section>
+
+    <details class="como">
+      <summary>Como as vozes funcionam</summary>
+      <div class="body">
+        <p>Este protótipo usa as vozes de leitura do seu navegador ou celular. O narrador recebe a melhor voz em português disponível. Cada personagem recebe uma voz diferente quando existem várias; quando existe só uma, mudamos o tom (grave ou agudo) e o ritmo para que ainda dê para saber quem está falando.</p>
+        <p>A emoção de cada fala (curiosa, sussurrando, sonolenta…) ajusta velocidade, tom e volume. Com o <em>modo soninho</em> ligado, o último trecho da história fica cada vez mais lento e baixinho.</p>
+        <div>
+          <p><strong id="voice-summary">Procurando vozes em português…</strong></p>
+          <div class="voice-list" id="voice-list" style="margin-top:6px"></div>
+        </div>
+        <ul>
+          <li><strong>Computador:</strong> o Microsoft Edge traz várias vozes neurais em português do Brasil (Francisca, Antônio, Thalita…), que soam bem mais naturais.</li>
+          <li><strong>Android:</strong> em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale vozes de português do Brasil.</li>
+          <li><strong>iPhone e iPad:</strong> em Ajustes › Acessibilidade › Conteúdo Falado › Vozes › Português, baixe vozes aprimoradas.</li>
+        </ul>
+        <p>Na versão final do app, a leitura será feita por vozes neurais de estúdio, com uma voz fixa por personagem e sussurros e bocejos de verdade.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- ===================== TELA 2: OUVIR ===================== -->
+  <div id="view-player" hidden>
+    <div class="player-top">
+      <button type="button" class="btn btn-ghost voltar" id="btn-voltar">← Montar outra história</button>
+      <h2 id="p-titulo">Título</h2>
+      <p class="resumo" id="p-resumo"></p>
+    </div>
+
+    <div class="stage" id="stage" aria-live="polite">
+      <div class="quem" id="stage-quem"></div>
+      <p class="texto pequeno" id="stage-texto">Toque em ▶ para começar a ouvir.</p>
+    </div>
+
+    <p class="eyebrow" style="margin-top:22px">Elenco e vozes</p>
+    <div class="cast-panel" id="cast-panel" aria-label="Elenco e vozes"></div>
+
+    <ol class="script" id="script"></ol>
+  </div>
+</main>
+
+<div class="dock" id="dock" hidden>
+  <div class="dock-inner">
+    <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+    <div class="controls">
+      <div class="left">
+        <label class="switch" title="No final, a voz vai ficando mais lenta e baixinha">
+          <input type="checkbox" id="soninho" checked>
+          <span class="track" aria-hidden="true"></span>
+          <span>Modo soninho</span>
+        </label>
+      </div>
+      <div class="transport">
+        <button type="button" class="round" id="btn-prev" aria-label="Fala anterior">
+          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        </button>
+        <button type="button" class="round big" id="btn-play" aria-label="Ouvir">
+          <svg viewBox="0 0 24 24" id="icon-play"><path d="M8 5v14l11-7z"/></svg>
+          <svg viewBox="0 0 24 24" id="icon-pause" hidden><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+        </button>
+        <button type="button" class="round" id="btn-next" aria-label="Próxima fala">
+          <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg>
+        </button>
+      </div>
+      <div class="right">
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-reiniciar">Do início</button>
+      </div>
+    </div>
+    <p class="status" id="dock-status"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     DADOS
+     ========================================================= */
+  const ROSTER = [
+    { id: 'lulu',    nome: 'Lulu',         avatar: '🐰', desc: 'uma coelhinha curiosa que fala rápido e pergunta tudo',              tom: 'agudo', ritmo: 'rapido' },
+    { id: 'bruno',   nome: 'Bruno',        avatar: '🐻', desc: 'um urso grandão, calmo e gentil, de frases curtas',                 tom: 'grave', ritmo: 'lento' },
+    { id: 'faisca',  nome: 'Faísca',       avatar: '🐉', desc: 'um dragãozinho tímido que solta fumacinha quando fica sem graça',   tom: 'medio', ritmo: 'normal' },
+    { id: 'estrela', nome: 'Estrela',      avatar: '🧚', desc: 'uma fada risonha que adora falar em rimas',                        tom: 'agudo', ritmo: 'normal' },
+    { id: 'tico',    nome: 'Capitão Tico', avatar: '🐸', desc: 'um sapo aventureiro que fala como capitão de navio',               tom: 'medio', ritmo: 'rapido' },
+    { id: 'coruja',  nome: 'Dona Coruja',  avatar: '🦉', desc: 'uma coruja sábia que fala devagar e explica as coisas',            tom: 'grave', ritmo: 'lento' },
+    { id: 'bipe',    nome: 'Bipe',         avatar: '🤖', desc: 'um robozinho que ainda está aprendendo a dormir',                  tom: 'medio', ritmo: 'normal' },
+    { id: 'nina',    nome: 'Nina',         avatar: '🐱', desc: 'uma gatinha preguiçosa que boceja no meio das frases',             tom: 'agudo', ritmo: 'lento' },
+  ];
+  const EMOJIS_CUSTOM = ['🦊', '🐢', '🦄', '🐧', '🐘', '🦁', '🐙', '🧸', '🐝', '🦋', '🐬', '🦔'];
+
+  const CENARIOS = [
+    { id: 'floresta', nome: 'Floresta Encantada',  desc: 'árvores que cochicham e um riacho que ri' },
+    { id: 'mar',      nome: 'Fundo do Mar',        desc: 'corais que brilham e uma baleia que canta' },
+    { id: 'espaco',   nome: 'Espaço Sideral',      desc: 'um foguete lento e planetas de algodão' },
+    { id: 'fazenda',  nome: 'Fazenda',             desc: 'galinheiro, celeiro e uma lua bem grande' },
+    { id: 'castelo',  nome: 'Castelo nas Nuvens',  desc: 'escadas de nuvem e um rei sonolento' },
+    { id: 'cidade',   nome: 'Cidade à Noite',      desc: 'janelas acesas e um ônibus que boceja' },
+    { id: 'praia',    nome: 'Praia ao Pôr do Sol', desc: 'ondas devagar e conchas que guardam segredos' },
+    { id: 'quarto',   nome: 'O Quarto da Criança', desc: 'os brinquedos ganham vida quando a luz apaga' },
+  ];
+  const TEMAS = [
+    { id: 'coragem',   nome: 'Coragem no escuro' },
+    { id: 'dividir',   nome: 'Dividir e ser gentil' },
+    { id: 'dormir',    nome: 'Hora de dormir sem birra' },
+    { id: 'amizade',   nome: 'Amizade' },
+    { id: 'paciencia', nome: 'Paciência' },
+    { id: 'natureza',  nome: 'Cuidar da natureza' },
+    { id: 'tentar',    nome: 'Errar e tentar de novo' },
+    { id: 'nenhum',    nome: 'Só aventura, sem lição' },
+  ];
+  const IDADES = [
+    { id: '2-3', nome: '2 a 3 anos', prompt: '2 a 3 anos: frases bem curtas, muita repetição, palavras do dia a dia, sons de bicho' },
+    { id: '4-6', nome: '4 a 6 anos', prompt: '4 a 6 anos: frases curtas, humor leve, um probleminha claro resolvido com carinho' },
+    { id: '7-9', nome: '7 a 9 anos', prompt: '7 a 9 anos: pode ter um mistério pequeno, vocabulário um pouco mais rico, piadas espertas' },
+  ];
+  const DURACOES = [
+    { id: 'curta', nome: 'Curtinha', tempo: '3 min',  palavras: 350 },
+    { id: 'media', nome: 'Média',    tempo: '6 min',  palavras: 650 },
+    { id: 'longa', nome: 'Longa',    tempo: '10 min', palavras: 1000 },
+  ];
+  const SEMENTES = [
+    'um chapéu que só aparece à noite', 'uma nuvem que quer aprender a cantar', 'um sapato perdido que conta piadas',
+    'um pedido de desculpas difícil de fazer', 'um bolo de aniversário misterioso', 'uma chave pequenininha sem porta',
+    'um eco que responde diferente', 'uma tartaruga que guarda segredos', 'um mapa desenhado com giz de cera',
+    'um barulhinho engraçado vindo do armário', 'uma estrela que caiu e quer voltar', 'um cobertor que fica com frio',
+    'um relógio que anda para trás só de noite', 'uma lanterna que ilumina sonhos', 'um travesseiro que sabe cantar baixinho',
+  ];
+
+  // Emoção → ajuste de prosódia sobre a voz base do personagem
+  const EMOCOES = {
+    calmo:       { rate: 1.00, pitch:  0.00, vol: 1.00 },
+    carinhoso:   { rate: 0.94, pitch: +0.05, vol: 0.95 },
+    animado:     { rate: 1.12, pitch: +0.12, vol: 1.00 },
+    feliz:       { rate: 1.06, pitch: +0.10, vol: 1.00 },
+    curioso:     { rate: 1.02, pitch: +0.10, vol: 1.00 },
+    misterioso:  { rate: 0.88, pitch: -0.08, vol: 0.85 },
+    sussurrando: { rate: 0.86, pitch: -0.05, vol: 0.55 },
+    sonolento:   { rate: 0.78, pitch: -0.08, vol: 0.80 },
+    assustado:   { rate: 1.10, pitch: +0.18, vol: 0.95 },
+    triste:      { rate: 0.86, pitch: -0.10, vol: 0.85 },
+    bravo:       { rate: 1.05, pitch: -0.12, vol: 1.00 },
+    surpreso:    { rate: 1.05, pitch: +0.20, vol: 1.00 },
+  };
+  const TOM_PITCH  = { grave: 0.72, medio: 1.0, agudo: 1.35 };
+  const TOM_GENERO = { grave: 'm', medio: null, agudo: 'f' };
+  const RITMO_RATE = { lento: 0.82, normal: 0.95, rapido: 1.08 };
+  const TOM_LABEL  = { grave: 'voz grave', medio: 'voz média', agudo: 'voz aguda' };
+  const RITMO_LABEL = { lento: 'fala devagar', normal: 'ritmo normal', rapido: 'fala rápido' };
+
+  // História de exemplo: fica sempre na biblioteca, para ouvir as vozes sem gerar nada.
+  const EXEMPLO = {
+    id: 'exemplo',
+    exemplo: true,
+    titulo: 'O Caminho de Volta pra Casa',
+    resumo: 'Lulu e Bruno brincam até o sol ir embora e descobrem que o escuro é cheio de amigos.',
+    cenario: 'Floresta Encantada',
+    tema: 'Coragem no escuro',
+    criadoEm: '2026-09-05T00:00:00.000Z',
+    elenco: [
+      { nome: 'Lulu',  avatar: '🐰', desc: 'uma coelhinha curiosa', tom: 'agudo', ritmo: 'rapido' },
+      { nome: 'Bruno', avatar: '🐻', desc: 'um urso grandão e gentil', tom: 'grave', ritmo: 'lento' },
+      { nome: 'Pisca', avatar: '✨', desc: 'um vaga-lume simpático', tom: 'agudo', ritmo: 'normal' },
+    ],
+    falas: [
+      { quem: 'narrador', emocao: 'calmo',       pausa: 500,  texto: 'Era uma vez, numa floresta onde as árvores cochichavam com o vento, uma coelhinha chamada Lulu e um urso grandão chamado Bruno.' },
+      { quem: 'narrador', emocao: 'calmo',       pausa: 400,  texto: 'Naquela tarde, os dois brincaram tanto de esconde-esconde que nem viram o sol ir embora.' },
+      { quem: 'Lulu',     emocao: 'surpreso',    pausa: 400,  texto: 'Bruno! Olha só... o céu ficou roxo! E agora ficou azul escuro!' },
+      { quem: 'Bruno',    emocao: 'calmo',       pausa: 400,  texto: 'Hum. É a noite chegando, Lulu. Devagarinho, como sempre.' },
+      { quem: 'Lulu',     emocao: 'assustado',   pausa: 600,  texto: 'Mas... e o caminho de casa? Eu não estou vendo mais o caminho!' },
+      { quem: 'narrador', emocao: 'misterioso',  pausa: 500,  texto: 'A floresta, que de dia era cheia de cores, agora era só sombras e sons pequenininhos.' },
+      { quem: 'Bruno',    emocao: 'carinhoso',   pausa: 400,  texto: 'Vem cá. Segura na minha pata. Grande e quentinha, viu?' },
+      { quem: 'Lulu',     emocao: 'triste',      pausa: 500,  texto: 'Eu não gosto do escuro, Bruno. No escuro tudo parece maior.' },
+      { quem: 'Bruno',    emocao: 'calmo',       pausa: 300,  texto: 'Sabe o que eu faço quando o escuro parece grande demais?' },
+      { quem: 'Lulu',     emocao: 'curioso',     pausa: 300,  texto: 'O quê?' },
+      { quem: 'Bruno',    emocao: 'calmo',       pausa: 400,  texto: 'Eu respiro fundo... e conto as coisas que eu ouço. Vamos tentar?' },
+      { quem: 'narrador', emocao: 'calmo',       pausa: 900,  texto: 'Os dois ficaram bem quietinhos.' },
+      { quem: 'Lulu',     emocao: 'sussurrando', pausa: 400,  texto: 'Eu ouço... um grilo.' },
+      { quem: 'Bruno',    emocao: 'sussurrando', pausa: 400,  texto: 'Eu ouço o riacho. Ele está rindo baixinho ali atrás.' },
+      { quem: 'Lulu',     emocao: 'curioso',     pausa: 300,  texto: 'Riacho? O riacho passa bem perto da nossa casa!' },
+      { quem: 'Bruno',    emocao: 'animado',     pausa: 400,  texto: 'Então é só seguir o barulho da água. Boa, Lulu!' },
+      { quem: 'narrador', emocao: 'calmo',       pausa: 500,  texto: 'E lá foram eles, passo a passo, seguindo a risada do riacho.' },
+      { quem: 'narrador', emocao: 'misterioso',  pausa: 700,  texto: 'De repente, uma luzinha verde piscou entre as folhas.' },
+      { quem: 'Lulu',     emocao: 'assustado',   pausa: 400,  texto: 'Bruno! Uma luz! Será que é um monstro?' },
+      { quem: 'Pisca',    emocao: 'feliz',       pausa: 400,  texto: 'Monstro? Eu? Eu sou o Pisca, o vaga-lume. Eu só brilho, não assusto ninguém!' },
+      { quem: 'Lulu',     emocao: 'surpreso',    pausa: 300,  texto: 'Um vaga-lume! Eu nunca tinha visto um de pertinho!' },
+      { quem: 'Bruno',    emocao: 'carinhoso',   pausa: 600,  texto: 'Viu, Lulu? No escuro também tem coisa bonita. A gente só vê quando para de correr.' },
+      { quem: 'Pisca',    emocao: 'animado',     pausa: 400,  texto: 'Vocês estão indo pra casa? Eu conheço o caminho! Sigam a minha luz!' },
+      { quem: 'narrador', emocao: 'feliz',       pausa: 500,  texto: 'Pisca voou na frente, piscando devagar, como uma estrelinha que tinha descido para ajudar.' },
+      { quem: 'narrador', emocao: 'calmo',       pausa: 500,  texto: 'Eles passaram pela pedra redonda, pela árvore torta e pela ponte de tronco.' },
+      { quem: 'Lulu',     emocao: 'feliz',       pausa: 400,  texto: 'Eu conheço essa ponte! Nossa casa é logo ali!' },
+      { quem: 'Bruno',    emocao: 'calmo',       pausa: 300,  texto: 'Chegamos. Obrigado, Pisca.' },
+      { quem: 'Pisca',    emocao: 'carinhoso',   pausa: 700,  texto: 'De nada, amigos. Se o escuro assustar de novo, olhem pela janela. Eu vou estar por aí, piscando.' },
+      { quem: 'narrador', emocao: 'calmo',       pausa: 800,  texto: 'Pisca subiu devagarinho e virou mais uma luzinha no meio de tantas estrelas.' },
+      { quem: 'narrador', emocao: 'carinhoso',   pausa: 500,  texto: 'Dentro da casa, Bruno ajeitou as folhas macias da cama. Lulu se enrolou no cobertor até só sobrar o narizinho de fora.' },
+      { quem: 'Lulu',     emocao: 'sonolento',   pausa: 400,  texto: 'Bruno... o escuro ainda é grande.' },
+      { quem: 'Bruno',    emocao: 'sonolento',   pausa: 500,  texto: 'É. Mas agora você sabe que ele é cheio de amigos.' },
+      { quem: 'Lulu',     emocao: 'sonolento',   pausa: 600,  texto: 'Um grilo... um riacho... e um vaga-lume.' },
+      { quem: 'Bruno',    emocao: 'sussurrando', pausa: 800,  texto: 'Isso. Fecha os olhinhos. Eu fico aqui.' },
+      { quem: 'narrador', emocao: 'sussurrando', pausa: 1000, texto: 'O grilo cantou baixinho. O riacho riu de longe. E lá fora, uma luzinha verde piscou uma última vez.' },
+      { quem: 'narrador', emocao: 'sussurrando', pausa: 1200, texto: 'Lulu bocejou. Bruno bocejou ainda maior. E os dois dormiram, quentinhos, até o sol voltar.' },
+      { quem: 'narrador', emocao: 'sussurrando', pausa: 2000, texto: 'Boa noite, Lulu. Boa noite, Bruno. E boa noite pra você também. Durma bem.' },
+    ],
+  };
+
+  /* =========================================================
+     UTILITÁRIOS
+     ========================================================= */
+  const $ = (s, root) => (root || document).querySelector(s);
+  const $$ = (s, root) => Array.from((root || document).querySelectorAll(s));
+  const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const palavras = (h) => h.falas.reduce((n, f) => n + f.texto.split(/\s+/).filter(Boolean).length, 0);
+  const minutos = (h) => Math.max(1, Math.round(palavras(h) / 115));
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const Store = {
+    KEY: 'contos-de-ninar:v1:historias',
+    list() { try { const v = JSON.parse(localStorage.getItem(this.KEY) || '[]'); return Array.isArray(v) ? v : []; } catch { return []; } },
+    save(h) { try { const l = this.list().filter((x) => x.id !== h.id); l.unshift(h); localStorage.setItem(this.KEY, JSON.stringify(l.slice(0, 30))); } catch { /* sem armazenamento: segue sem salvar */ } },
+    remove(id) { try { localStorage.setItem(this.KEY, JSON.stringify(this.list().filter((x) => x.id !== id))); } catch { /* idem */ } },
+  };
+
+  /* =========================================================
+     ESTADO DA MONTAGEM
+     ========================================================= */
+  const state = {
+    selecionados: ['lulu', 'bruno'],
+    customs: [],
+    pronome: 'ela',
+    cenario: 'floresta',
+    tema: 'coragem',
+    idade: '4-6',
+    duracao: 'media',
+    emojiCustom: EMOJIS_CUSTOM[0],
+  };
+  const MAX_CAST = 3;
+  let sampleFn = null;      // capacidade `sample` do runtime de Artifacts (null fora do claude.ai)
+  let sampleIndisponivel = false;
+  let genCtl = null;
+
+  const todosPersonagens = () => ROSTER.concat(state.customs);
+  const personagem = (id) => todosPersonagens().find((c) => c.id === id);
+
+  /* =========================================================
+     VOZES (Web Speech API)
+     ========================================================= */
+  const Voices = {
+    all: [], pt: [],
+    ok: typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window,
+    refresh() {
+      if (!this.ok) return;
+      this.all = speechSynthesis.getVoices() || [];
+      this.pt = this.all.filter((v) => /^pt/i.test(v.lang)).sort((a, b) => this.score(b) - this.score(a));
+    },
+    score(v) {
+      let s = 0;
+      if (/pt[-_]BR/i.test(v.lang)) s += 4;
+      if (/natural|neural|premium|enhanced|\bhd\b/i.test(v.name)) s += 3;
+      if (/google/i.test(v.name)) s += 2;
+      if (v.localService === false) s += 1;
+      if (/luciana|francisca|ant[ôo]nio/i.test(v.name)) s += 1;
+      return s;
+    },
+    genero(v) {
+      if (!v) return null;
+      const n = v.name.toLowerCase();
+      if (/francisca|luciana|thalita|brenda|elza|giovanna|leila|let[ií]cia|manuela|yara|camila|vit[oó]ria|fernanda|raquel|joana|google portugu/.test(n)) return 'f';
+      if (/ant[ôo]nio|donato|f[aá]bio|humberto|j[uú]lio|nicolau|val[eé]rio|daniel|felipe|ricardo|joaquim|duarte|leandro|jo[aã]o|carlos/.test(n)) return 'm';
+      return null;
+    },
+    label(v) {
+      if (!v) return 'voz do sistema';
+      return v.name
+        .replace(/^Microsoft\s+/i, '').replace(/\s*Online\s*\(Natural\)/i, '').replace(/\s*-\s*Portuguese.*$/i, '')
+        .replace(/^Google\s+/i, '').replace(/\(.*?\)/g, '').trim() || v.name;
+    },
+  };
+  if (Voices.ok) {
+    Voices.refresh();
+    speechSynthesis.addEventListener('voiceschanged', () => { Voices.refresh(); renderVoiceInfo(); if (Player.h) { assignVoices(Player.h); renderCast(); } });
+    setTimeout(() => { Voices.refresh(); renderVoiceInfo(); if (Player.h) { assignVoices(Player.h); renderCast(); } }, 800);
+  }
+
+  function renderVoiceInfo() {
+    const sum = $('#voice-summary'); const list = $('#voice-list');
+    if (!Voices.ok) { sum.textContent = 'Este navegador não tem leitura em voz alta. Dá para acompanhar o texto e ler para a criança.'; list.innerHTML = ''; return; }
+    if (!Voices.all.length) { sum.textContent = 'Procurando vozes…'; return; }
+    const n = Voices.pt.length;
+    sum.textContent = n === 0 ? 'Nenhuma voz em português encontrada; usando a voz padrão do sistema.'
+      : n === 1 ? 'Uma voz em português disponível. Os personagens se diferenciam pelo tom e pelo ritmo.'
+      : `${n} vozes em português disponíveis. Cada personagem recebe uma diferente.`;
+    list.innerHTML = Voices.pt.slice(0, 12).map((v) => `<span>${esc(Voices.label(v))} · ${esc(v.lang)}</span>`).join('');
+  }
+
+  // Distribui vozes/tom/ritmo para narrador, elenco e falantes extras que a história inventar.
+  function assignVoices(h) {
+    const disponiveis = Voices.pt.length ? Voices.pt : (Voices.all.length ? [Voices.all[0]] : [null]);
+    const chave = (v) => (v ? v.voiceURI || v.name : 'default');
+    const uso = new Map();
+    const marca = (v) => uso.set(chave(v), (uso.get(chave(v)) || 0) + 1);
+
+    const falantes = ['narrador'];
+    for (const c of h.elenco) if (!falantes.includes(c.nome)) falantes.push(c.nome);
+    for (const f of h.falas) if (!falantes.includes(f.quem)) falantes.push(f.quem);
+
+    const mapa = {};
+    const narrVoice = disponiveis[0];
+    marca(narrVoice);
+    mapa.narrador = { voice: narrVoice, pitch: 1.0, rate: 0.9, tom: 'medio', ritmo: 'normal', extra: false };
+
+    const restantes = disponiveis.length > 1 ? disponiveis.slice(1) : disponiveis;
+    for (const nome of falantes.slice(1)) {
+      const c = h.elenco.find((x) => x.nome === nome) || { tom: 'medio', ritmo: 'normal', extra: true };
+      const ov = (h.overrides || {})[nome];
+      const tom = ov?.tom || c.tom || 'medio';
+      const ritmo = c.ritmo || 'normal';
+      let voice;
+      if (ov && Number.isInteger(ov.voiceIndex) && disponiveis[ov.voiceIndex]) {
+        voice = disponiveis[ov.voiceIndex];
+      } else {
+        const pref = TOM_GENERO[tom];
+        voice = restantes.slice().sort((a, b) => {
+          const ua = uso.get(chave(a)) || 0, ub = uso.get(chave(b)) || 0;
+          if (ua !== ub) return ua - ub;
+          const ga = Voices.genero(a) === pref ? 1 : 0, gb = Voices.genero(b) === pref ? 1 : 0;
+          if (ga !== gb) return gb - ga;
+          return Voices.score(b) - Voices.score(a);
+        })[0];
+      }
+      const reuso = uso.get(chave(voice)) || 0;
+      marca(voice);
+      // Se a voz repetiu, afasta o tom para continuar distinguível.
+      let pitch = TOM_PITCH[tom];
+      if (reuso > 0) pitch += (reuso % 2 ? 0.14 : -0.14) * Math.ceil(reuso / 2);
+      mapa[nome] = { voice, pitch: clamp(pitch, 0.5, 1.8), rate: RITMO_RATE[ritmo], tom, ritmo, extra: !!c.extra };
+    }
+    Player.vozes = mapa;
+    Player.disponiveis = disponiveis;
+  }
+
+  function descreveVoz(v) {
+    const partes = [Voices.label(v.voice)];
+    if (Voices.pt.length <= 1 || v.extra) partes.push(TOM_LABEL[v.tom]);
+    partes.push(RITMO_LABEL[v.ritmo]);
+    return partes.join(' · ');
+  }
+
+  function paramsFor(f, progresso) {
+    const v = Player.vozes[f.quem] || Player.vozes.narrador;
+    const e = EMOCOES[f.emocao] || EMOCOES.calmo;
+    let sRate = 1, sVol = 1;
+    if (Player.soninho && progresso > 0.7) { const t = (progresso - 0.7) / 0.3; sRate = 1 - 0.15 * t; sVol = 1 - 0.3 * t; }
+    return {
+      voice: v.voice,
+      rate: clamp(v.rate * e.rate * sRate, 0.5, 1.6),
+      pitch: clamp(v.pitch + e.pitch, 0.1, 2),
+      volume: clamp(e.vol * sVol, 0.05, 1),
+    };
+  }
+
+  // Divide em trechos curtos: evita o corte do Chrome em falas longas e dá pausas naturais.
+  function splitChunks(texto) {
+    const limpo = String(texto).replace(/\s+/g, ' ').trim();
+    const frases = limpo.match(/[^.!?…]+[.!?…]+["”»]?\s*|[^.!?…]+$/g) || [limpo];
+    const chunks = [];
+    let atual = '';
+    for (const fr of frases) {
+      if ((atual + fr).length > 180 && atual) { chunks.push(atual.trim()); atual = fr; } else atual += fr;
+    }
+    if (atual.trim()) chunks.push(atual.trim());
+    return chunks.length ? chunks : [limpo];
+  }
+  const estimaMs = (texto, rate) => (texto.length / (15 * rate)) * 1000;
+
+  function speakChunk(texto, p, run) {
+    return new Promise((resolve) => {
+      if (!Voices.ok) { setTimeout(resolve, estimaMs(texto, p.rate)); return; }
+      const u = new SpeechSynthesisUtterance(texto);
+      if (p.voice) u.voice = p.voice;
+      u.lang = (p.voice && p.voice.lang) || 'pt-BR';
+      u.rate = p.rate; u.pitch = p.pitch; u.volume = p.volume;
+      let done = false;
+      const fim = () => { if (done) return; done = true; clearTimeout(t); const k = Player.keep.indexOf(u); if (k >= 0) Player.keep.splice(k, 1); resolve(); };
+      u.onend = fim; u.onerror = fim;
+      const t = setTimeout(fim, estimaMs(texto, p.rate) + 5000); // vigia: se o navegador engasgar, seguimos
+      Player.keep.push(u); // referência viva: sem isso o Chrome às vezes não dispara onend
+      if (run !== Player.runId) { fim(); return; }
+      speechSynthesis.speak(u);
+    });
+  }
+
+  async function speakFala(f, progresso, run) {
+    const p = paramsFor(f, progresso);
+    for (const c of splitChunks(f.texto)) {
+      if (run !== Player.runId) return;
+      await speakChunk(c, p, run);
+    }
+    if (run !== Player.runId) return;
+    const pausa = clamp(Number(f.pausa) || 350, 0, 4000) * (Player.soninho && progresso > 0.8 ? 1.3 : 1);
+    await sleep(pausa);
+  }
+
+  /* =========================================================
+     PLAYER
+     ========================================================= */
+  const Player = {
+    h: null, i: 0, playing: false, runId: 0, soninho: true, keep: [], vozes: {}, disponiveis: [], terminou: false,
+    load(h) {
+      this.stopSpeech(); this.h = h; this.i = 0; this.terminou = false;
+      if (!h.overrides) h.overrides = {};
+      assignVoices(h);
+      renderPlayer();
+    },
+    stopSpeech() { this.runId++; if (Voices.ok) speechSynthesis.cancel(); this.playing = false; },
+    async play(from) {
+      if (!this.h) return;
+      if (Number.isInteger(from)) this.i = clamp(from, 0, this.h.falas.length - 1);
+      if (this.terminou && !Number.isInteger(from)) { this.i = 0; this.terminou = false; }
+      this.stopSpeech();
+      const run = ++this.runId;
+      this.playing = true; updateDock();
+      await sleep(60); // o Chrome ignora speak() colado num cancel()
+      if (run !== this.runId) return;
+      for (; this.i < this.h.falas.length; this.i++) {
+        if (run !== this.runId) return;
+        highlight(this.i);
+        await speakFala(this.h.falas[this.i], this.i / this.h.falas.length, run);
+        if (run !== this.runId) return;
+      }
+      this.i = this.h.falas.length - 1; this.playing = false; this.terminou = true;
+      updateDock(); setStage(null);
+    },
+    pause() { this.stopSpeech(); updateDock(); },
+    toggle() { this.playing ? this.pause() : this.play(); },
+    next() { if (!this.h) return; const was = this.playing; const i = clamp(this.i + 1, 0, this.h.falas.length - 1); this.terminou = false; if (was) this.play(i); else { this.i = i; highlight(i); } },
+    prev() { if (!this.h) return; const was = this.playing; const i = clamp(this.i - 1, 0, this.h.falas.length - 1); this.terminou = false; if (was) this.play(i); else { this.i = i; highlight(i); } },
+    preview(nome) {
+      if (!Voices.ok || !this.h) return;
+      this.stopSpeech(); updateDock();
+      const c = this.h.elenco.find((x) => x.nome === nome);
+      const frases = nome === 'narrador'
+        ? ['Era uma vez, numa noite bem tranquila…']
+        : [`Oi! Eu sou ${nome}. Boa noite!`, `Eu sou ${nome}. Vamos ouvir uma história?`, `${nome} aqui! Pronto para dormir?`];
+      const f = { quem: nome, texto: rand(frases), emocao: c && c.ritmo === 'lento' ? 'calmo' : 'feliz', pausa: 0 };
+      const run = ++this.runId;
+      sleep(60).then(() => { if (run === this.runId) speakFala(f, 0, run); });
+    },
+    trocarVoz(nome) {
+      if (!this.h) return;
+      const ov = this.h.overrides[nome] || {};
+      if (this.disponiveis.length > 1) {
+        const atual = this.disponiveis.indexOf(this.vozes[nome].voice);
+        ov.voiceIndex = (atual + 1) % this.disponiveis.length;
+      } else {
+        const toms = ['grave', 'medio', 'agudo'];
+        ov.tom = toms[(toms.indexOf(this.vozes[nome].tom) + 1) % toms.length];
+      }
+      this.h.overrides[nome] = ov;
+      assignVoices(this.h); renderCast(); this.preview(nome);
+    },
+  };
+
+  const avatarDe = (h, quem) => quem === 'narrador' ? null : (h.elenco.find((c) => c.nome === quem)?.avatar || '✨');
+
+  function renderPlayer() {
+    const h = Player.h;
+    $('#p-titulo').textContent = h.titulo;
+    $('#p-resumo').textContent = h.resumo || '';
+    renderCast();
+    const ol = $('#script');
+    ol.innerHTML = h.falas.map((f, i) => {
+      const av = avatarDe(h, f.quem);
+      const mini = av ? `<span class="mini" aria-hidden="true">${esc(av)}</span>` : `<span class="mini narr" aria-hidden="true">N</span>`;
+      const quem = f.quem === 'narrador' ? 'Narrador' : f.quem;
+      return `<li data-i="${i}" tabindex="0" role="button" aria-label="Ir para a fala ${i + 1}">${mini}<span class="fala"><b>${esc(quem)} · ${esc(f.emocao)}</b>${esc(f.texto)}</span></li>`;
+    }).join('');
+    setStage(null);
+    updateDock();
+  }
+
+  function renderCast() {
+    const h = Player.h; if (!h) return;
+    const nomes = ['narrador', ...Object.keys(Player.vozes).filter((n) => n !== 'narrador')];
+    $('#cast-panel').innerHTML = nomes.map((nome) => {
+      const v = Player.vozes[nome];
+      const c = h.elenco.find((x) => x.nome === nome);
+      const av = nome === 'narrador' ? '📖' : (c?.avatar || '✨');
+      const rotulo = nome === 'narrador' ? 'Narrador' : nome;
+      const sub = nome === 'narrador' ? 'quem conta a história' : (c?.desc || 'personagem que apareceu na história');
+      return `<div class="cast-row" data-nome="${esc(nome)}">
+        <span class="avatar" aria-hidden="true">${esc(av)}</span>
+        <div><div class="nome">${esc(rotulo)}</div><div class="voz">${esc(sub)}<br>${esc(descreveVoz(v))}</div></div>
+        <div class="acoes">
+          <button type="button" class="btn btn-sm" data-act="ouvir" ${Voices.ok ? '' : 'disabled'}>Ouvir</button>
+          <button type="button" class="btn btn-sm btn-ghost" data-act="trocar" title="Trocar a voz" ${Voices.ok ? '' : 'disabled'}>Trocar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function setStage(i) {
+    const h = Player.h; if (!h) return;
+    const quem = $('#stage-quem'), texto = $('#stage-texto');
+    if (i == null) {
+      quem.innerHTML = '';
+      texto.className = 'texto pequeno';
+      texto.textContent = Player.terminou ? 'Fim. Boa noite! Toque em ▶ para ouvir de novo.' : (Voices.ok ? 'Toque em ▶ para começar a ouvir.' : 'Sem voz neste navegador: toque em ▶ e acompanhe o texto para ler em voz alta.');
+      return;
+    }
+    const f = h.falas[i];
+    const av = avatarDe(h, f.quem);
+    quem.innerHTML = `${av ? `<span class="avatar" aria-hidden="true">${esc(av)}</span>` : ''}<span>${esc(f.quem === 'narrador' ? 'Narrador' : f.quem)}</span><span class="emo">${esc(f.emocao)}</span>`;
+    texto.className = 'texto';
+    texto.textContent = f.texto;
+  }
+
+  function highlight(i) {
+    const h = Player.h; if (!h) return;
+    $$('#script li').forEach((li, k) => { li.classList.toggle('atual', k === i); li.classList.toggle('lida', k < i); });
+    $$('.cast-row').forEach((r) => r.classList.toggle('falando', r.dataset.nome === h.falas[i].quem));
+    setStage(i);
+    const li = $(`#script li[data-i="${i}"]`);
+    if (li && Player.playing) li.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    updateDock();
+  }
+
+  function updateDock() {
+    const h = Player.h; if (!h) return;
+    const total = h.falas.length;
+    const done = Player.terminou ? total : Player.i;
+    $('#progress-bar').style.width = `${(done / total) * 100}%`;
+    $('#icon-play').hidden = Player.playing;
+    $('#icon-pause').hidden = !Player.playing;
+    $('#btn-play').setAttribute('aria-label', Player.playing ? 'Pausar' : 'Ouvir');
+    $('#dock-status').textContent = Player.terminou ? `${total} falas · ${minutos(h)} min · fim` : `fala ${Math.min(Player.i + 1, total)} de ${total} · cerca de ${minutos(h)} min`;
+  }
+
+  /* =========================================================
+     TELA DE MONTAGEM
+     ========================================================= */
+  function renderGrid() {
+    const grid = $('#grid-cast');
+    const cheio = state.selecionados.length >= MAX_CAST;
+    grid.innerHTML = todosPersonagens().map((c) => {
+      const on = state.selecionados.includes(c.id);
+      return `<button type="button" class="cast-card" data-id="${esc(c.id)}" aria-pressed="${on}" ${!on && cheio ? 'disabled' : ''}>
+        ${c.custom ? `<span class="remover" role="button" tabindex="0" data-remove="${esc(c.id)}" aria-label="Remover ${esc(c.nome)}" title="Remover">✕</span>` : ''}
+        <span class="avatar" aria-hidden="true">${esc(c.avatar)}</span>
+        <span class="nome">${esc(c.nome)}</span>
+        <span class="desc">${esc(c.desc)}</span>
+        <span class="voz-tag">${esc(TOM_LABEL[c.tom])} · ${esc(RITMO_LABEL[c.ritmo])}</span>
+      </button>`;
+    }).join('') + `<button type="button" class="cast-card add" id="btn-add-custom"><span class="plus" aria-hidden="true">+</span><span>Criar personagem</span></button>`;
+    $('#cast-count').textContent = `${state.selecionados.length} de ${MAX_CAST} escolhidos`;
+  }
+
+  function renderChips() {
+    $('#chips-cenario').innerHTML = CENARIOS.map((c) => `<button type="button" class="chip" data-id="${c.id}" aria-pressed="${state.cenario === c.id}">${esc(c.nome)}</button>`).join('');
+    $('#chips-tema').innerHTML = TEMAS.map((t) => `<button type="button" class="chip" data-id="${t.id}" aria-pressed="${state.tema === t.id}">${esc(t.nome)}</button>`).join('');
+    $('#seg-idade').innerHTML = IDADES.map((i) => `<button type="button" data-v="${i.id}" aria-pressed="${state.idade === i.id}">${esc(i.nome)}</button>`).join('');
+    $('#seg-duracao').innerHTML = DURACOES.map((d) => `<button type="button" data-v="${d.id}" aria-pressed="${state.duracao === d.id}">${esc(d.nome)}<small>${esc(d.tempo)}</small></button>`).join('');
+    $('#c-emoji').innerHTML = EMOJIS_CUSTOM.map((e) => `<button type="button" data-e="${e}" aria-pressed="${state.emojiCustom === e}" aria-label="Carinha ${e}">${e}</button>`).join('');
+  }
+
+  function renderBiblioteca() {
+    const salvas = Store.list();
+    const itens = salvas.concat([EXEMPLO]);
+    $('#lib').innerHTML = itens.map((h) => {
+      const data = h.exemplo ? 'história de exemplo' : new Date(h.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+      return `<div class="lib-item" data-id="${esc(h.id)}">
+        <div>
+          <div class="titulo">${esc(h.titulo)}</div>
+          <div class="meta">${esc(h.cenario || '')} · ${minutos(h)} min · ${esc(data)}</div>
+          <div class="faces" aria-hidden="true">${(h.elenco || []).map((c) => esc(c.avatar)).join('')}</div>
+        </div>
+        <div class="acoes">
+          <button type="button" class="btn btn-sm" data-act="ouvir">Ouvir</button>
+          ${h.exemplo ? '' : `<button type="button" class="btn btn-sm btn-ghost" data-act="apagar" aria-label="Apagar ${esc(h.titulo)}">Apagar</button>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function showView(v) {
+    const player = v === 'player';
+    $('#view-setup').hidden = player;
+    $('#view-player').hidden = !player;
+    $('#dock').hidden = !player;
+    $('#app').classList.toggle('has-dock', player);
+    if (!player) Player.stopSpeech();
+    window.scrollTo({ top: 0 });
+  }
+
+  /* =========================================================
+     GERAÇÃO DA HISTÓRIA (capacidade `sample`)
+     ========================================================= */
+  function elencoAtual() {
+    const nomeCrianca = $('#crianca').value.trim();
+    const elenco = state.selecionados.map((id) => personagem(id)).filter(Boolean).map((c) => ({ nome: c.nome, avatar: c.avatar, desc: c.desc, tom: c.tom, ritmo: c.ritmo }));
+    const participa = nomeCrianca && $('#crianca-participa').checked;
+    if (participa) elenco.unshift({ nome: nomeCrianca, avatar: '⭐', desc: state.pronome === 'ela' ? 'a criança que vai ouvir, heroína da história' : 'a criança que vai ouvir, herói da história', tom: 'agudo', ritmo: 'normal', crianca: true });
+    return { elenco, nomeCrianca, participa };
+  }
+
+  function buildPrompt() {
+    const { elenco, nomeCrianca } = elencoAtual();
+    const cen = CENARIOS.find((c) => c.id === state.cenario);
+    const tema = TEMAS.find((t) => t.id === state.tema);
+    const idade = IDADES.find((i) => i.id === state.idade);
+    const dur = DURACOES.find((d) => d.id === state.duracao);
+    const extra = $('#extra').value.trim();
+    const linhaCrianca = nomeCrianca
+      ? `- Criança que vai ouvir: ${nomeCrianca} (${idade.nome}); referir-se a ${nomeCrianca} como "${state.pronome}". ${elenco.some((c) => c.crianca) ? `${nomeCrianca} PARTICIPA da história como personagem e fala (use "quem": "${nomeCrianca}").` : `${nomeCrianca} não é personagem; o narrador pode falar com ${state.pronome} diretamente no começo e no fim.`}`
+      : `- Criança que vai ouvir: ${idade.nome}. Nome desconhecido: o narrador fala com "você".`;
+    const nomesElenco = elenco.map((c) => `"${c.nome}"`).join(', ');
+    return [
+      'Você é um contador de histórias infantis para a hora de dormir e escreve em português do Brasil.',
+      'Escreva UMA história original, para ser lida em voz alta por um app que usa uma voz diferente para cada personagem.',
+      '',
+      'DADOS',
+      linhaCrianca,
+      '- Personagens (use EXATAMENTE estes nomes em "quem"):',
+      ...elenco.map((c) => `  • ${c.nome}: ${c.desc}. Voz ${TOM_LABEL[c.tom].replace('voz ', '')}, ${RITMO_LABEL[c.ritmo]}. Mantenha esse jeito de falar em todas as falas.`),
+      `- Cenário: ${cen.nome} (${cen.desc}).`,
+      `- Tema escondido: ${tema.id === 'nenhum' ? 'nenhum; só uma aventura gostosa' : tema.nome + ', mostrado pelas ações, sem moral explícita'}.`,
+      `- Faixa etária: ${idade.prompt}.`,
+      `- Tamanho: cerca de ${dur.palavras} palavras no total.`,
+      extra ? `- Detalhe especial de hoje, para entrar na história com naturalidade: ${extra}.` : '',
+      `- Ideia surpresa para dar frescor: ${rand(SEMENTES)}.`,
+      '',
+      'REGRAS DE ESCRITA',
+      '- Frases curtas e claras, boas para um sintetizador de voz. Sem parênteses, sem travessões de diálogo, sem onomatopeias longas. Use "..." para pausas dramáticas.',
+      '- Tom acolhedor e engraçado nos momentos certos. Sem violência, sem medo forte, sem vilão cruel. O conflito é leve e se resolve com carinho.',
+      '- Alterne narrador e falas dos personagens. Cada fala de personagem é um item separado, com "quem" igual ao nome exato. O narrador usa "quem": "narrador". Só os personagens listados falam; um personagem extra só se for indispensável e com no máximo 3 falas.',
+      '- Curva de sono: comece com energia leve e, nos últimos 20% da história, vá acalmando. Os últimos 3 a 5 itens têm emoção "sonolento" ou "sussurrando", com os personagens se aconchegando e dormindo. O último item é o narrador desejando boa noite' + (nomeCrianca ? ` para ${nomeCrianca}` : '') + '.',
+      '',
+      'FORMATO',
+      'Responda SOMENTE com um JSON válido, sem texto antes ou depois, neste formato:',
+      '{"titulo": "título curto", "resumo": "uma frase", "falas": [',
+      '  {"quem": "narrador", "texto": "...", "emocao": "calmo", "pausa": 400},',
+      `  {"quem": ${elenco[0] ? JSON.stringify(elenco[0].nome) : '"Lulu"'}, "texto": "...", "emocao": "curioso", "pausa": 300}`,
+      ']}',
+      `- "quem": "narrador" ou um destes: ${nomesElenco}.`,
+      '- "emocao": uma destas palavras: calmo, carinhoso, animado, feliz, curioso, misterioso, sussurrando, sonolento, assustado, triste, bravo, surpreso.',
+      '- "pausa": silêncio em milissegundos depois do item. Normal: 250 a 600. Antes de uma virada ou revelação: 900 a 1500. No último item: 2000.',
+      '- Cada "texto" tem no máximo 240 caracteres. Divida trechos longos do narrador em vários itens seguidos.',
+    ].filter((l) => l !== '').join('\n');
+  }
+
+  function normalizeStory(data, elenco, meta) {
+    if (!data || typeof data !== 'object' || !Array.isArray(data.falas)) return null;
+    const nomes = new Set(['narrador', ...elenco.map((c) => c.nome)]);
+    const falas = data.falas
+      .filter((f) => f && typeof f.texto === 'string' && f.texto.trim())
+      .map((f) => {
+        let quem = typeof f.quem === 'string' ? f.quem.trim() : 'narrador';
+        if (!nomes.has(quem)) {
+          const achou = [...nomes].find((n) => n.toLowerCase() === quem.toLowerCase());
+          if (achou) quem = achou; else if (/^narr/i.test(quem)) quem = 'narrador';
+        }
+        const emocao = EMOCOES[f.emocao] ? f.emocao : 'calmo';
+        return { quem, texto: f.texto.trim().slice(0, 400), emocao, pausa: clamp(Number(f.pausa) || 400, 0, 4000) };
+      });
+    if (falas.length < 5) return null;
+    return {
+      id: 'h_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      criadoEm: new Date().toISOString(),
+      titulo: (typeof data.titulo === 'string' && data.titulo.trim()) ? data.titulo.trim().slice(0, 80) : 'História de hoje',
+      resumo: typeof data.resumo === 'string' ? data.resumo.trim().slice(0, 200) : '',
+      elenco, falas, ...meta,
+    };
+  }
+
+  const MENSAGENS_ERRO = {
+    rate_limited: 'Muitas histórias em pouco tempo. Espere um pouquinho e tente de novo.',
+    session_expired: 'Sua sessão no claude.ai expirou. Entre de novo e tente outra vez.',
+    refused: 'O Claude não conseguiu escrever essa história. Tente mudar os personagens, o cenário ou o detalhe especial.',
+    empty_completion: 'A história veio vazia. Tente de novo com outra combinação.',
+    invalid_json: 'A história chegou num formato inesperado. Tente de novo.',
+    prompt_too_large: 'O pedido ficou grande demais. Encurte o detalhe especial de hoje.',
+    upstream_error: 'Deu um soluço na conexão. Tente de novo em instantes.',
+  };
+  const CODIGOS_SEM_PERMISSAO = new Set(['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed']);
+
+  function previewStream(texto) {
+    const m = texto.match(/"texto"\s*:\s*"((?:[^"\\]|\\.)*)"/g) || [];
+    $('#gen-titulo').textContent = m.length ? 'Escrevendo a história…' : 'Pensando na história…';
+    $('#gen-contador').textContent = m.length ? `${m.length} fala${m.length === 1 ? '' : 's'} escrita${m.length === 1 ? '' : 's'}` : '';
+    if (m.length) {
+      const ultimo = m[m.length - 1].replace(/^"texto"\s*:\s*"/, '').replace(/"$/, '');
+      try { $('#gen-preview').textContent = JSON.parse(`"${ultimo}"`); } catch { $('#gen-preview').textContent = ultimo; }
+    }
+    const t = texto.match(/"titulo"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    if (t) { try { $('#gen-titulo').textContent = JSON.parse(`"${t[1]}"`); } catch { /* segue com o texto padrão */ } }
+  }
+
+  function setGenState(on) {
+    $('#cta').hidden = on;
+    $('#gen').hidden = !on;
+    if (on) { $('#gen-erro').hidden = true; $('#gen-titulo').textContent = 'Pensando na história…'; $('#gen-preview').textContent = 'Escolhendo o começo, o meio e o fim.'; $('#gen-contador').textContent = ''; }
+  }
+
+  async function gerar() {
+    if (!sampleFn) return;
+    const { elenco } = elencoAtual();
+    if (!elenco.length) { mostraErro('Escolha pelo menos um personagem.'); return; }
+    const meta = {
+      cenario: CENARIOS.find((c) => c.id === state.cenario)?.nome,
+      tema: TEMAS.find((t) => t.id === state.tema)?.nome,
+      crianca: $('#crianca').value.trim() || undefined,
+    };
+    genCtl = new AbortController();
+    setGenState(true);
+    try {
+      const data = await sampleFn.json(buildPrompt(), { signal: genCtl.signal, cache: false, onText: ({ text }) => previewStream(text) });
+      const h = normalizeStory(data, elenco, meta);
+      if (!h) throw { code: 'invalid_json', message: 'shape' };
+      Store.save(h); renderBiblioteca();
+      Player.load(h); showView('player');
+    } catch (e) {
+      const code = (e && e.code) || 'upstream_error';
+      if (code === 'cancelled') { /* o pai parou: nada a dizer */ }
+      else if (CODIGOS_SEM_PERMISSAO.has(code)) { sampleIndisponivel = true; renderModoAviso(); }
+      else mostraErro(MENSAGENS_ERRO[code] || MENSAGENS_ERRO.upstream_error);
+    } finally {
+      setGenState(false); genCtl = null;
+    }
+  }
+
+  function mostraErro(msg) { const el = $('#gen-erro'); el.textContent = msg; el.hidden = false; }
+
+  function renderModoAviso() {
+    const aviso = $('#aviso-modo'); const btn = $('#btn-gerar'); const hint = $('#cta-hint');
+    if (sampleFn && !sampleIndisponivel) { aviso.hidden = true; btn.disabled = false; return; }
+    btn.disabled = true;
+    if (sampleIndisponivel) {
+      aviso.textContent = 'Este app não tem permissão para pedir histórias ao Claude aqui. A biblioteca e a história de exemplo continuam funcionando.';
+      hint.textContent = 'Criação de histórias indisponível nesta conta.';
+    } else {
+      aviso.textContent = 'Modo demonstração: fora do claude.ai as histórias novas não são geradas. Ouça a história de exemplo e as salvas para conhecer as vozes.';
+      hint.textContent = 'Abra este app dentro do claude.ai para criar histórias novas.';
+    }
+    aviso.hidden = false;
+  }
+
+  /* =========================================================
+     EVENTOS
+     ========================================================= */
+  $('#grid-cast').addEventListener('click', (ev) => {
+    const rem = ev.target.closest('[data-remove]');
+    if (rem) { ev.stopPropagation(); const id = rem.dataset.remove; state.customs = state.customs.filter((c) => c.id !== id); state.selecionados = state.selecionados.filter((s) => s !== id); renderGrid(); return; }
+    if (ev.target.closest('#btn-add-custom')) { $('#form-custom').hidden = false; $('#c-nome').focus(); return; }
+    const card = ev.target.closest('.cast-card[data-id]');
+    if (!card || card.disabled) return;
+    const id = card.dataset.id;
+    if (state.selecionados.includes(id)) state.selecionados = state.selecionados.filter((s) => s !== id);
+    else if (state.selecionados.length < MAX_CAST) state.selecionados.push(id);
+    renderGrid();
+  });
+  $('#grid-cast').addEventListener('keydown', (ev) => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[data-remove]')) { ev.preventDefault(); ev.target.click(); } });
+
+  $('#c-emoji').addEventListener('click', (ev) => { const b = ev.target.closest('button[data-e]'); if (!b) return; state.emojiCustom = b.dataset.e; $$('#c-emoji button').forEach((x) => x.setAttribute('aria-pressed', x === b)); });
+  $('#c-cancelar').addEventListener('click', () => { $('#form-custom').hidden = true; });
+  $('#c-salvar').addEventListener('click', () => {
+    const nome = $('#c-nome').value.trim(); const desc = $('#c-desc').value.trim();
+    if (!nome) { $('#c-nome').focus(); return; }
+    const c = { id: 'c_' + Date.now().toString(36), nome, avatar: state.emojiCustom, desc: desc || 'um personagem inventado hoje', tom: $('#c-tom').value, ritmo: $('#c-ritmo').value, custom: true };
+    state.customs.push(c);
+    if (state.selecionados.length < MAX_CAST) state.selecionados.push(c.id);
+    $('#c-nome').value = ''; $('#c-desc').value = ''; $('#form-custom').hidden = true;
+    renderGrid();
+  });
+
+  const bindChips = (sel, key) => $(sel).addEventListener('click', (ev) => { const b = ev.target.closest('.chip'); if (!b) return; state[key] = b.dataset.id; $$('.chip', $(sel)).forEach((x) => x.setAttribute('aria-pressed', x === b)); });
+  bindChips('#chips-cenario', 'cenario');
+  bindChips('#chips-tema', 'tema');
+  const bindSeg = (sel, key) => $(sel).addEventListener('click', (ev) => { const b = ev.target.closest('button[data-v]'); if (!b) return; state[key] = b.dataset.v; $$('button', $(sel)).forEach((x) => x.setAttribute('aria-pressed', x === b)); });
+  bindSeg('#seg-idade', 'idade');
+  bindSeg('#seg-duracao', 'duracao');
+  bindSeg('#seg-pronome', 'pronome');
+
+  $('#btn-gerar').addEventListener('click', gerar);
+  $('#btn-parar').addEventListener('click', () => genCtl?.abort());
+
+  $('#lib').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-act]'); if (!b) return;
+    const id = b.closest('.lib-item').dataset.id;
+    const h = id === 'exemplo' ? JSON.parse(JSON.stringify(EXEMPLO)) : Store.list().find((x) => x.id === id);
+    if (!h) return;
+    if (b.dataset.act === 'ouvir') { Player.load(h); showView('player'); }
+    if (b.dataset.act === 'apagar') { Store.remove(id); renderBiblioteca(); }
+  });
+
+  $('#btn-voltar').addEventListener('click', () => showView('setup'));
+  $('#btn-play').addEventListener('click', () => Player.toggle());
+  $('#btn-prev').addEventListener('click', () => Player.prev());
+  $('#btn-next').addEventListener('click', () => Player.next());
+  $('#btn-reiniciar').addEventListener('click', () => { Player.terminou = false; Player.play(0); });
+  $('#soninho').addEventListener('change', (ev) => { Player.soninho = ev.target.checked; });
+  $('#script').addEventListener('click', (ev) => { const li = ev.target.closest('li[data-i]'); if (li) Player.play(Number(li.dataset.i)); });
+  $('#script').addEventListener('keydown', (ev) => { const li = ev.target.closest('li[data-i]'); if (li && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); Player.play(Number(li.dataset.i)); } });
+  $('#cast-panel').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-act]'); if (!b) return;
+    const nome = b.closest('.cast-row').dataset.nome;
+    if (b.dataset.act === 'ouvir') Player.preview(nome);
+    if (b.dataset.act === 'trocar') Player.trocarVoz(nome);
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== ' ' || $('#view-player').hidden) return;
+    if (ev.target.closest('input, textarea, select, button, [role="button"]')) return;
+    ev.preventDefault(); Player.toggle();
+  });
+  window.addEventListener('pagehide', () => { if (Voices.ok) speechSynthesis.cancel(); });
+
+  /* =========================================================
+     CÉU ESTRELADO (Canvas)
+     ========================================================= */
+  (function stars() {
+    const c = $('#stars'); const ctx = c.getContext('2d'); if (!ctx) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0, h = 0, pts = [], dpr = 1;
+    function size() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = c.width = Math.floor(innerWidth * dpr); h = c.height = Math.floor(innerHeight * dpr);
+      c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+      const n = Math.round((innerWidth * innerHeight) / 9000);
+      pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h * 0.92, r: (Math.random() * 1.1 + 0.4) * dpr, p: Math.random() * Math.PI * 2, s: 0.35 + Math.random() * 0.7 }));
+    }
+    function draw(t) {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#cfd8ff';
+      for (const p of pts) {
+        ctx.globalAlpha = reduce ? 0.65 : 0.4 + 0.38 * Math.sin((t / 1000) * p.s + p.p);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+      if (!reduce) requestAnimationFrame(draw);
+    }
+    addEventListener('resize', () => { size(); if (reduce) draw(0); });
+    size(); requestAnimationFrame(draw);
+  })();
+
+  /* =========================================================
+     INÍCIO
+     ========================================================= */
+  renderGrid(); renderChips(); renderBiblioteca(); renderVoiceInfo();
+  $('#btn-gerar').disabled = true; // até sabermos se o Claude está disponível nesta visualização
+  (async () => {
+    try { sampleFn = (window.claude && typeof window.claude.use === 'function') ? await window.claude.use('sample') : null; }
+    catch { sampleFn = null; }
+    renderModoAviso();
+  })();
+})();
+</script>
+
+</body>
+</html>
