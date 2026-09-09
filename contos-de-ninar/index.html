@@ -230,6 +230,8 @@
   .gen .contador { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
   .notice { margin-top: 14px; padding: 12px 14px; border-radius: var(--radius-s); background: var(--lamp-soft); color: var(--ink); font-size: 14px; border: 1px solid transparent; }
+  #audio-alerta { position: sticky; top: 8px; z-index: 6; margin-top: 0; margin-bottom: 14px; box-shadow: var(--shadow); background: color-mix(in srgb, var(--sky-2) 88%, var(--bad) 12%); }
+  .tecnico { font-size: 12px; opacity: .75; margin-top: 8px; font-variant-numeric: tabular-nums; }
   .notice.erro { background: color-mix(in srgb, var(--bad) 16%, transparent); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
 
   /* ---------- Library ---------- */
@@ -337,6 +339,16 @@
       <div class="test-row">
         <button type="button" class="btn btn-sm" id="btn-testar-som">🔊 Testar o som</button>
         <span class="hint" id="teste-resultado"></span>
+      </div>
+      <div id="teste-painel" class="notice" hidden>
+        <p id="teste-pergunta"><strong>O que você ouviu?</strong> Deve tocar um pling e depois uma voz dizendo “Boa noite”.</p>
+        <div class="chips" style="margin-top:10px" id="teste-opcoes">
+          <button type="button" class="chip" data-ouviu="tudo">Ouvi a voz</button>
+          <button type="button" class="chip" data-ouviu="toque">Só o pling</button>
+          <button type="button" class="chip" data-ouviu="nada">Não ouvi nada</button>
+        </div>
+        <p id="teste-diagnostico" style="margin-top:12px"></p>
+        <p id="teste-tecnico" class="tecnico"></p>
       </div>
     </header>
 
@@ -767,6 +779,34 @@
     'network': 'Esta voz precisa de internet e a conexão falhou.',
     semvoz: 'Não há nenhuma voz de leitura instalada neste navegador.',
     mudo: 'O navegador aceitou o pedido, mas nenhum som começou.',
+    semfala: 'Este navegador não sabe ler em voz alta.',
+    nada: 'Nenhum som saiu deste app, nem um bipe de teste.',
+  };
+
+  // Um toque gerado na hora: se ele sai e a voz não, o problema é a voz, não o aparelho.
+  const Toque = {
+    ctx: null,
+    async tocar() {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return { ok: false, estado: 'sem-webaudio' };
+        if (!this.ctx) this.ctx = new AC();
+        if (this.ctx.state === 'suspended') { try { await this.ctx.resume(); } catch { /* segue */ } }
+        if (this.ctx.state !== 'running') return { ok: false, estado: this.ctx.state };
+        const t0 = this.ctx.currentTime;
+        [659.25, 880].forEach((f, i) => {
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+          const q = t0 + i * 0.26;
+          o.type = 'sine'; o.frequency.value = f;
+          g.gain.setValueAtTime(0.0001, q);
+          g.gain.exponentialRampToValueAtTime(0.25, q + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.0001, q + 0.24);
+          o.connect(g); g.connect(this.ctx.destination);
+          o.start(q); o.stop(q + 0.26);
+        });
+        return { ok: true, estado: 'running' };
+      } catch { return { ok: false, estado: 'erro' }; }
+    },
   };
 
   const Som = {
@@ -792,7 +832,7 @@
       if (this.avisado === code) return;
       this.avisado = code;
       const causa = ERROS_SOM[code] || 'A voz não começou neste navegador.';
-      const podeAba = emIframe && (code === 'not-allowed' || code === 'mudo' || code === 'audio-busy');
+      const podeAba = emIframe && ['not-allowed', 'mudo', 'audio-busy', 'nada', 'semfala'].includes(code);
       const dica = podeAba
         ? 'Dentro do claude.ai a janelinha do app pode bloquear a voz. Abra em uma aba própria e toque em ▶ de novo.'
         : 'Instale uma voz em português no aparelho, ou abra no Microsoft Edge, que já vem com vozes brasileiras. O texto de cada fala continua aparecendo na tela para você ler.';
@@ -801,6 +841,8 @@
         (podeAba ? ' <button type="button" class="btn btn-sm" id="btn-nova-aba" style="margin-top:10px">Abrir em nova aba</button>' : '') +
         `<br><span style="font-size:12px;opacity:.75">código: ${esc(code)} · vozes: ${Voices.all.length} (${Voices.pt.length} em português)</span>`;
       el.hidden = false;
+      try { el.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } catch { /* navegador antigo */ }
+      if (Player.h) updateDock();
       const b = $('#btn-nova-aba');
       if (b) b.onclick = () => { try { window.open(location.href, '_blank', 'noopener'); } catch { /* pop-up bloqueado */ } };
     },
@@ -899,7 +941,7 @@
 
   function speakChunk(texto, p, run) {
     return new Promise((resolve) => {
-      if (!Voices.ok) { setTimeout(resolve, estimaMs(texto, p.rate)); return; }
+      if (!Voices.ok) { Som.erro('semvoz'); setTimeout(resolve, estimaMs(texto, p.rate)); return; }
       const u = new SpeechSynthesisUtterance(texto);
       if (p.voice) u.voice = p.voice;
       u.lang = (p.voice && p.voice.lang) || 'pt-BR';
@@ -1061,7 +1103,8 @@
     $('#icon-play').hidden = Player.playing;
     $('#icon-pause').hidden = !Player.playing;
     $('#btn-play').setAttribute('aria-label', Player.playing ? 'Pausar' : 'Ouvir');
-    $('#dock-status').textContent = Player.terminou ? `${total} falas · ${minutos(h)} min · fim` : `fala ${Math.min(Player.i + 1, total)} de ${total} · cerca de ${minutos(h)} min`;
+    const semSom = !Som.ouviu && Som.ultimoErro ? ' · sem som, veja o aviso' : '';
+    $('#dock-status').textContent = (Player.terminou ? `${total} falas · ${minutos(h)} min · fim` : `fala ${Math.min(Player.i + 1, total)} de ${total} · cerca de ${minutos(h)} min`) + semSom;
   }
 
   /* =========================================================
@@ -1320,24 +1363,68 @@
     if (b.dataset.act === 'apagar') { Store.remove(id); renderBiblioteca(); }
   });
 
-  $('#btn-testar-som').addEventListener('click', () => {
-    const res = $('#teste-resultado');
-    if (!Voices.ok) { res.textContent = 'Este navegador não lê em voz alta.'; Som.alerta('semvoz'); return; }
-    Voices.refresh(); renderVoiceInfo();
-    if (!Voices.all.length) { res.textContent = 'Nenhuma voz instalada neste aparelho.'; Som.alerta('semvoz'); return; }
-    const v = Voices.pt[0] || Voices.all[0];
+  const Teste = { toque: null, falou: false, erro: null };
+
+  $('#btn-testar-som').addEventListener('click', async () => {
+    const res = $('#teste-resultado'), painel = $('#teste-painel');
+    Teste.toque = null; Teste.falou = false; Teste.erro = null;
     Som.avisado = null;
+    $('#teste-diagnostico').textContent = '';
+    $('#teste-tecnico').textContent = '';
+    $$('#teste-opcoes .chip').forEach((c) => c.setAttribute('aria-pressed', 'false'));
+    painel.hidden = false;
     res.textContent = 'Tocando…';
-    const u = new SpeechSynthesisUtterance('Boa noite! Está me ouvindo?');
-    u.voice = v; u.lang = v.lang || 'pt-BR'; u.rate = 0.95;
-    u.onstart = () => { Som.ok(); res.textContent = `Falando com a voz ${Voices.label(v)}.`; };
-    u.onend = () => { if (Som.ouviu) res.textContent = `Som funcionando · voz ${Voices.label(v)}.`; };
-    u.onerror = (ev) => { const c = (ev && ev.error) || 'desconhecido'; res.textContent = `Falhou (${c}).`; Som.erro(c); };
-    Player.keep.push(u);
-    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
-    if (speechSynthesis.paused) speechSynthesis.resume();
-    speechSynthesis.speak(u); // no mesmo toque: é o que destrava o iPhone
-    setTimeout(() => { if (!Som.ouviu) { res.textContent = 'Nenhum som começou.'; Som.erro('mudo'); } }, 2500);
+
+    // 1) a voz primeiro, ainda dentro do toque: é o que destrava iPhone e Chrome
+    if (Voices.ok) {
+      Voices.refresh(); renderVoiceInfo();
+      const v = Voices.pt[0] || Voices.all[0] || null;
+      const u = new SpeechSynthesisUtterance('Boa noite! Está me ouvindo?');
+      if (v) u.voice = v;
+      u.lang = (v && v.lang) || 'pt-BR'; u.rate = 0.95;
+      u.onstart = () => { Teste.falou = true; Som.ok(); };
+      u.onerror = (ev) => { Teste.erro = (ev && ev.error) || 'desconhecido'; };
+      Player.keep.push(u);
+      if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+      if (speechSynthesis.paused) speechSynthesis.resume();
+      if (!Voices.all.length) Teste.erro = 'semvoz';
+      speechSynthesis.speak(u);
+    } else {
+      Teste.erro = 'semfala';
+    }
+    // 2) o pling logo depois, sem esperar
+    Toque.tocar().then((r) => { Teste.toque = r.ok; $('#teste-tecnico').textContent = tecnico(); });
+
+    setTimeout(() => { res.textContent = 'Responda abaixo o que você ouviu.'; $('#teste-tecnico').textContent = tecnico(); }, 2600);
+  });
+
+  function tecnico() {
+    const partes = [
+      `pling: ${Teste.toque === null ? '…' : Teste.toque ? 'gerado' : 'falhou'}`,
+      `voz: ${Teste.falou ? 'começou' : (Teste.erro || 'não começou')}`,
+      `vozes: ${Voices.all.length} (${Voices.pt.length} em português)`,
+      `janela: ${emIframe ? 'dentro do claude.ai' : 'aba própria'}`,
+    ];
+    return partes.join(' · ');
+  }
+
+  $('#teste-opcoes').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.chip[data-ouviu]'); if (!b) return;
+    $$('#teste-opcoes .chip').forEach((c) => c.setAttribute('aria-pressed', String(c === b)));
+    const d = $('#teste-diagnostico');
+    const aba = emIframe ? ' Toque em <strong>Abrir em nova aba</strong> abaixo: fora da janelinha do claude.ai a leitura em voz alta costuma ser liberada.' : '';
+    if (b.dataset.ouviu === 'tudo') {
+      Som.ok(); $('#audio-alerta').hidden = true;
+      d.innerHTML = 'Então está tudo certo. Se a história ficar muda mesmo assim, me avise que eu investigo outra parte.';
+    } else if (b.dataset.ouviu === 'toque') {
+      d.innerHTML = 'O som do aparelho funciona; quem está bloqueada é a voz de leitura.' +
+        (Voices.all.length === 0 ? ' Este aparelho não tem nenhuma voz instalada: instale uma voz de português nas configurações do sistema, ou abra no Microsoft Edge, que já vem com vozes brasileiras.' : aba);
+      Som.alerta(Teste.erro || (Voices.all.length === 0 ? 'semvoz' : 'mudo'));
+    } else {
+      d.innerHTML = 'Nenhum som saiu, nem o pling. Confira o volume, o botão de silencioso do celular, se o som não foi para um fone Bluetooth, e se a aba não está no mudo (clique com o botão direito na aba do navegador).' + aba;
+      Som.alerta('nada');
+    }
+    $('#teste-tecnico').textContent = tecnico();
   });
 
   $('#btn-voltar').addEventListener('click', () => showView('setup'));
