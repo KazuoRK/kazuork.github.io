@@ -92,7 +92,15 @@ No protótipo isso é gerado na hora pelo próprio navegador, com a Web Audio AP
 
 O volume do ambiente abaixa sozinho enquanto o personagem fala (para a voz não competir com o fundo) e volta a subir na pausa entre falas, e acompanha o modo soninho, ficando mais baixo junto com a voz perto do final. Um interruptor "Sons do cenário" no rodapé liga e desliga.
 
-Na versão final, o ideal é trocar a síntese por gravações reais ou por um som gerado uma única vez por cenário (banco de sons livre, ou uma chamada paga de geração de áudio), guardado como arquivo estático e reaproveitado por todas as histórias daquele cenário. Efeitos pontuais amarrados a um momento específico da história, tipo uma porta rangendo, viriam depois: precisam que o roteiro gerado pelo Claude marque onde e qual efeito entra, dentro de uma lista fechada, do mesmo jeito que a emoção de cada fala hoje é uma entre doze palavras fixas.
+Na versão final, o ideal é trocar a síntese por gravações reais ou por um som gerado uma única vez por cenário (banco de sons livre, ou uma chamada paga de geração de áudio), guardado como arquivo estático e reaproveitado por todas as histórias daquele cenário.
+
+### Efeitos pontuais (trovão, splash, sino mágico, vento forte)
+
+Além do fundo contínuo, uma fala pode carregar um campo opcional `"efeito"`, escolhido pelo Claude na hora de escrever a história entre quatro palavras fixas: `trovao`, `splash`, `sino_magico`, `vento_forte`. É o mesmo mecanismo da emoção, uma lista fechada que o roteiro marca, só que usada no máximo três vezes por história e a maioria das falas não leva nenhum.
+
+O som **não** toca em cima da voz. Ele acontece do jeito clássico de história contada: o narrador diz "de repente, começou uma tempestade", termina a frase, faz silêncio, o trovão acontece sozinho, e só depois a próxima fala começa. Pra isso funcionar sem cortar o som pela metade, o player garante uma pausa mínima igual à duração de cada efeito (trovão 4s, sino mágico 1,3s, vento forte 2,3s, splash 0,5s) mesmo que a pausa escrita no roteiro seja mais curta — e o prompt já pede ao Claude uma pausa generosa (1200 a 2000ms) sempre que usa um efeito, pra isso raramente precisar acontecer.
+
+Verificado sem depender de ouvido: um teste mede o tempo de parede entre a história entrar numa fala marcada e entrar na seguinte, e confirma que esse intervalo bate com a duração do efeito, não com a pausa curta que estava no roteiro de teste (700ms escritos, 1300ms reais, a duração do sino).
 
 ### Limitações do protótipo
 

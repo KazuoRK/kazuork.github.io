@@ -282,6 +282,7 @@
   .stage .quem { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 14px; color: var(--ink-2); }
   .stage .quem .avatar { width: 34px; height: 34px; font-size: 19px; }
   .stage .emo { font-size: 12px; font-weight: 700; color: var(--ink-3); padding: 3px 9px; border-radius: 999px; background: var(--sky-3); text-transform: lowercase; }
+  .stage .fx, .script .fx { font-size: 14px; margin-left: 1px; }
   .stage .texto { font-family: var(--font-book); font-size: 24px; line-height: 1.4; color: var(--ink); }
   .stage .texto.pequeno { font-size: 19px; color: var(--ink-2); }
   @media (max-width: 420px) { .stage .texto { font-size: 21px; } }
@@ -628,6 +629,18 @@
     bravo:       { rate: 1.05, pitch: -0.12, vol: 1.00 },
     surpreso:    { rate: 1.05, pitch: +0.20, vol: 1.00 },
   };
+  // efeitos pontuais que o roteiro pode marcar numa fala específica (ver Ambiente.efeito)
+  const EFEITOS_INFO = {
+    trovao:      { emoji: '⚡', nome: 'trovão' },
+    splash:      { emoji: '💦', nome: 'splash' },
+    sino_magico: { emoji: '✨', nome: 'brilho mágico' },
+    vento_forte: { emoji: '🍃', nome: 'rajada de vento' },
+  };
+  const EFEITOS_VALIDOS = new Set(Object.keys(EFEITOS_INFO));
+  // quanto cada efeito dura de verdade (do disparo até virar silêncio), pra garantir
+  // que a pausa depois da fala não corte o som pela metade
+  const EFEITOS_DURACAO_MS = { trovao: 4000, splash: 500, sino_magico: 1300, vento_forte: 2300 };
+
   const TOM_PITCH  = { grave: 0.72, medio: 1.0, agudo: 1.35 };
   const TOM_GENERO = { grave: 'm', medio: null, agudo: 'f' };
   const RITMO_RATE = { lento: 0.82, normal: 0.95, rapido: 1.08 };
@@ -666,7 +679,7 @@
       { quem: 'Lulu',     emocao: 'curioso',     pausa: 300,  texto: 'Riacho? O riacho passa bem perto da nossa casa!' },
       { quem: 'Bruno',    emocao: 'animado',     pausa: 400,  texto: 'Então é só seguir o barulho da água. Boa, Lulu!' },
       { quem: 'narrador', emocao: 'calmo',       pausa: 500,  texto: 'E lá foram eles, passo a passo, seguindo a risada do riacho.' },
-      { quem: 'narrador', emocao: 'misterioso',  pausa: 700,  texto: 'De repente, uma luzinha verde piscou entre as folhas.' },
+      { quem: 'narrador', emocao: 'misterioso',  pausa: 700,  texto: 'De repente, uma luzinha verde piscou entre as folhas.', efeito: 'sino_magico' },
       { quem: 'Lulu',     emocao: 'assustado',   pausa: 400,  texto: 'Bruno! Uma luz! Será que é um monstro?' },
       { quem: 'Pisca',    emocao: 'feliz',       pausa: 400,  texto: 'Monstro? Eu? Eu sou o Pisca, o vaga-lume. Eu só brilho, não assusto ninguém!' },
       { quem: 'Lulu',     emocao: 'surpreso',    pausa: 300,  texto: 'Um vaga-lume! Eu nunca tinha visto um de pertinho!' },
@@ -906,23 +919,11 @@
       this.eventos.push(setTimeout(cantar, Math.random() * 1500));
     },
 
-    // trovão distante: estrondo raro, ruído com o corte caindo rápido pro grave
+    // trovão distante: estrondo raro (a mesma receita do efeito pontual, mas repetindo sozinho)
     trovaoRaro(vol, minSeg, maxSeg) {
-      const ctx = this.ctx;
       const trovejar = () => {
         if (!this.ativo) return;
-        const t = ctx.currentTime;
-        const noise = this.ruido('branco');
-        const filtro = ctx.createBiquadFilter();
-        filtro.type = 'lowpass';
-        filtro.frequency.setValueAtTime(850, t);
-        filtro.frequency.exponentialRampToValueAtTime(65, t + 1.3);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.linearRampToValueAtTime(vol, t + 0.2);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 2.6 + Math.random() * 1.4);
-        noise.connect(filtro); filtro.connect(g); g.connect(this.duckGain);
-        noise.start(t); noise.stop(t + 4.5);
+        this._estrondo(vol);
         this.eventos.push(setTimeout(trovejar, (minSeg + Math.random() * (maxSeg - minSeg)) * 1000));
       };
       this.eventos.push(setTimeout(trovejar, 5000 + Math.random() * 6000));
@@ -1047,6 +1048,82 @@
       if (!this.ctx || !this.duckGain) return;
       this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
       this.duckGain.gain.setTargetAtTime(ativo ? 0.4 : 1, this.ctx.currentTime, ativo ? 0.35 : 0.9);
+    },
+
+    // --- efeitos pontuais: um som só, amarrado a UMA fala específica do roteiro ---
+    // Disparam DEPOIS da fala terminar, no silêncio antes da próxima (ver speakFala):
+    // narrador fala, faz uma pausa, o som acontece sozinho, a história continua.
+    // Ligam direto na saída (não no duckGain) como margem de segurança, pra tocar
+    // claro mesmo se algum atraso do navegador fizer o som encostar na próxima fala.
+    // Se apagam sozinhos: o envelope decai a zero e o nó do Web Audio para e é
+    // descartado; nada fica tocando em loop.
+    _estrondo(vol) {
+      const ctx = this.ctx, t = ctx.currentTime;
+      const noise = this.ruido('branco');
+      const filtro = ctx.createBiquadFilter();
+      filtro.type = 'lowpass';
+      filtro.frequency.setValueAtTime(850, t);
+      filtro.frequency.exponentialRampToValueAtTime(65, t + 1.3);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 2.6 + Math.random() * 1.4);
+      noise.connect(filtro); filtro.connect(g); g.connect(this.saidaGain);
+      noise.start(t); noise.stop(t + 4.5);
+    },
+    efeitoTrovao() { this._estrondo(0.34); },
+
+    efeitoSplash() {
+      const ctx = this.ctx, t = ctx.currentTime;
+      const plop = ctx.createOscillator(); plop.type = 'sine';
+      plop.frequency.setValueAtTime(220, t); plop.frequency.exponentialRampToValueAtTime(70, t + 0.18);
+      const gPlop = ctx.createGain();
+      gPlop.gain.setValueAtTime(0.001, t);
+      gPlop.gain.linearRampToValueAtTime(0.28, t + 0.01);
+      gPlop.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      plop.connect(gPlop); gPlop.connect(this.saidaGain);
+      plop.start(t); plop.stop(t + 0.3);
+      const borrifo = this.ruido('branco');
+      const filtro = ctx.createBiquadFilter(); filtro.type = 'bandpass'; filtro.frequency.value = 2200; filtro.Q.value = 0.8;
+      const gBorrifo = ctx.createGain();
+      gBorrifo.gain.setValueAtTime(0.001, t);
+      gBorrifo.gain.linearRampToValueAtTime(0.22, t + 0.015);
+      gBorrifo.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      borrifo.connect(filtro); filtro.connect(gBorrifo); gBorrifo.connect(this.saidaGain);
+      borrifo.start(t); borrifo.stop(t + 0.4);
+    },
+
+    efeitoSino() {
+      const ctx = this.ctx;
+      [659.25, 783.99, 987.77].forEach((freq, i) => { // arpejo curto e brilhante
+        const t = ctx.currentTime + i * 0.09;
+        const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.16, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+        osc.connect(g); g.connect(this.saidaGain);
+        osc.start(t); osc.stop(t + 1.2);
+      });
+    },
+
+    efeitoVento() {
+      const ctx = this.ctx, t = ctx.currentTime;
+      const noise = this.ruido('rosa');
+      const filtro = ctx.createBiquadFilter(); filtro.type = 'lowpass'; filtro.frequency.value = 700;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.linearRampToValueAtTime(0.22, t + 0.4);
+      g.gain.linearRampToValueAtTime(0.001, t + 2.2);
+      noise.connect(filtro); filtro.connect(g); g.connect(this.saidaGain);
+      noise.start(t); noise.stop(t + 2.3);
+    },
+
+    // dispara o efeito marcado numa fala. Chamado bem no início dela (ver speakFala).
+    efeito(nome) {
+      if (!this.ctx || !this.ligado || this.ctx.state !== 'running') return;
+      const fn = { trovao: this.efeitoTrovao, splash: this.efeitoSplash, sino_magico: this.efeitoSino, vento_forte: this.efeitoVento }[nome];
+      if (fn) fn.call(this);
     },
 
     // acompanha o modo soninho: nos últimos 30% da história, o ambiente também baixa
@@ -1254,7 +1331,13 @@
     }
     Ambiente.duck(false);
     if (run !== Player.runId) return;
-    const pausa = clamp(Number(f.pausa) || 350, 0, 4000) * (Player.soninho && progresso > 0.8 ? 1.3 : 1);
+    // o efeito toca só AGORA, depois da fala terminar: narrador diz "começou uma
+    // tempestade", faz silêncio, o som acontece sozinho, e só então a história segue.
+    let pausa = clamp(Number(f.pausa) || 350, 0, 4000) * (Player.soninho && progresso > 0.8 ? 1.3 : 1);
+    if (f.efeito) {
+      Ambiente.efeito(f.efeito);
+      pausa = Math.max(pausa, EFEITOS_DURACAO_MS[f.efeito] || 0); // não corta o som na metade
+    }
     await sleep(pausa);
   }
 
@@ -1333,7 +1416,8 @@
       const av = avatarDe(h, f.quem);
       const mini = av ? `<span class="mini" aria-hidden="true">${esc(av)}</span>` : `<span class="mini narr" aria-hidden="true">N</span>`;
       const quem = f.quem === 'narrador' ? 'Narrador' : f.quem;
-      return `<li data-i="${i}" tabindex="0" role="button" aria-label="Ir para a fala ${i + 1}">${mini}<span class="fala"><b>${esc(quem)} · ${esc(f.emocao)}</b>${esc(f.texto)}</span></li>`;
+      const fx = f.efeito && EFEITOS_INFO[f.efeito];
+      return `<li data-i="${i}" tabindex="0" role="button" aria-label="Ir para a fala ${i + 1}">${mini}<span class="fala"><b>${esc(quem)} · ${esc(f.emocao)}${fx ? ` <span class="fx" title="${esc(fx.nome)}">${fx.emoji}</span>` : ''}</b>${esc(f.texto)}</span></li>`;
     }).join('');
     setStage(null);
     updateDock();
@@ -1370,7 +1454,8 @@
     }
     const f = h.falas[i];
     const av = avatarDe(h, f.quem);
-    quem.innerHTML = `${av ? `<span class="avatar" aria-hidden="true">${esc(av)}</span>` : ''}<span>${esc(f.quem === 'narrador' ? 'Narrador' : f.quem)}</span><span class="emo">${esc(f.emocao)}</span>`;
+    const fx = f.efeito && EFEITOS_INFO[f.efeito];
+    quem.innerHTML = `${av ? `<span class="avatar" aria-hidden="true">${esc(av)}</span>` : ''}<span>${esc(f.quem === 'narrador' ? 'Narrador' : f.quem)}</span><span class="emo">${esc(f.emocao)}</span>${fx ? `<span class="fx" title="${esc(fx.nome)}">${fx.emoji}</span>` : ''}`;
     texto.className = 'texto';
     texto.textContent = f.texto;
   }
@@ -1500,11 +1585,13 @@
       'Responda SOMENTE com um JSON válido, sem texto antes ou depois, neste formato:',
       '{"titulo": "título curto", "resumo": "uma frase", "falas": [',
       '  {"quem": "narrador", "texto": "...", "emocao": "calmo", "pausa": 400},',
-      `  {"quem": ${elenco[0] ? JSON.stringify(elenco[0].nome) : '"Lulu"'}, "texto": "...", "emocao": "curioso", "pausa": 300}`,
+      `  {"quem": ${elenco[0] ? JSON.stringify(elenco[0].nome) : '"Lulu"'}, "texto": "...", "emocao": "curioso", "pausa": 300},`,
+      '  {"quem": "narrador", "texto": "De repente, um trovão rugiu ao longe.", "emocao": "assustado", "pausa": 1500, "efeito": "trovao"}',
       ']}',
       `- "quem": "narrador" ou um destes: ${nomesElenco}.`,
       '- "emocao": uma destas palavras: calmo, carinhoso, animado, feliz, curioso, misterioso, sussurrando, sonolento, assustado, triste, bravo, surpreso.',
       '- "pausa": silêncio em milissegundos depois do item. Normal: 250 a 600. Antes de uma virada ou revelação: 900 a 1500. No último item: 2000.',
+      '- "efeito" (opcional, no máximo 3 vezes na história inteira, só quando a cena realmente pede): "trovao", "splash", "sino_magico" ou "vento_forte". O som toca DEPOIS dessa fala, no silêncio antes da próxima, então deixe a "pausa" bem generosa (1200 a 2000) sempre que usar "efeito", pra dar tempo do som acontecer. A maioria das falas não leva efeito nenhum; não force.',
       '- Cada "texto" tem no máximo 240 caracteres. Divida trechos longos do narrador em vários itens seguidos.',
     ].filter((l) => l !== '').join('\n');
   }
@@ -1521,7 +1608,8 @@
           if (achou) quem = achou; else if (/^narr/i.test(quem)) quem = 'narrador';
         }
         const emocao = EMOCOES[f.emocao] ? f.emocao : 'calmo';
-        return { quem, texto: f.texto.trim().slice(0, 400), emocao, pausa: clamp(Number(f.pausa) || 400, 0, 4000) };
+        const base = { quem, texto: f.texto.trim().slice(0, 400), emocao, pausa: clamp(Number(f.pausa) || 400, 0, 4000) };
+        return EFEITOS_VALIDOS.has(f.efeito) ? { ...base, efeito: f.efeito } : base;
       });
     if (falas.length < 5) return null;
     return {
