@@ -489,7 +489,7 @@
           <div class="voice-list" id="voice-list" style="margin-top:6px"></div>
         </div>
         <ul>
-          <li><strong>Sem som nenhum?</strong> Toque em <em>Testar o som</em> lá em cima. Dentro do claude.ai a janelinha do app às vezes bloqueia a leitura em voz alta; abrir em uma aba própria resolve.</li>
+          <li><strong>Sem som nenhum?</strong> Toque em <em>Testar o som</em> lá em cima. Se aparecer <em>vozes: 0</em>, a janela onde o app está aberto não tem voz de leitura. É o caso do app do Claude no celular: abra o link no Chrome ou no Edge e a voz aparece.</li>
           <li><strong>Computador:</strong> o Microsoft Edge traz várias vozes neurais em português do Brasil (Francisca, Antônio, Thalita…), que soam bem mais naturais.</li>
           <li><strong>Android:</strong> em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale vozes de português do Brasil.</li>
           <li><strong>iPhone e iPad:</strong> em Ajustes › Acessibilidade › Conteúdo Falado › Vozes › Português, baixe vozes aprimoradas.</li>
@@ -832,19 +832,36 @@
       if (this.avisado === code) return;
       this.avisado = code;
       const causa = ERROS_SOM[code] || 'A voz não começou neste navegador.';
-      const podeAba = emIframe && ['not-allowed', 'mudo', 'audio-busy', 'nada', 'semfala'].includes(code);
-      const dica = podeAba
-        ? 'Dentro do claude.ai a janelinha do app pode bloquear a voz. Abra em uma aba própria e toque em ▶ de novo.'
-        : 'Instale uma voz em português no aparelho, ou abra no Microsoft Edge, que já vem com vozes brasileiras. O texto de cada fala continua aparecendo na tela para você ler.';
+      // sem vozes é sempre o caso "não existe voz aqui", venha o código que vier
+      const semVoz = Voices.all.length === 0 || code === 'semvoz' || code === 'semfala';
+      const podeAba = emIframe;
+      const dica = semVoz && emIframe
+        ? 'Esta janela do Claude não tem nenhuma voz de leitura. Abra o app no navegador do celular (Chrome ou Edge), onde as vozes do sistema existem.'
+        : semVoz
+        ? 'Instale uma voz de português nas configurações do aparelho, ou abra no Microsoft Edge, que já vem com vozes brasileiras. O texto de cada fala continua na tela para você ler.'
+        : emIframe
+        ? 'Dentro do claude.ai a janelinha do app pode bloquear a voz. Abra em uma aba do navegador e toque em ▶ de novo.'
+        : 'Confira o volume e o botão de silencioso. O texto de cada fala continua na tela para você ler.';
       const el = $('#audio-alerta');
       el.innerHTML = `<strong>Sem som.</strong> ${esc(causa)} ${esc(dica)}` +
-        (podeAba ? ' <button type="button" class="btn btn-sm" id="btn-nova-aba" style="margin-top:10px">Abrir em nova aba</button>' : '') +
-        `<br><span style="font-size:12px;opacity:.75">código: ${esc(code)} · vozes: ${Voices.all.length} (${Voices.pt.length} em português)</span>`;
+        (podeAba ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn btn-sm" id="btn-nova-aba">Abrir no navegador</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="btn-copiar-link">Copiar o link</button>
+          </div>
+          <input type="text" id="link-app" readonly value="${esc(location.href)}" style="margin-top:8px;width:100%;padding:8px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--sky-3);color:var(--ink-2);font-size:12px">
+          <span class="tecnico" style="display:block">No app do Claude, o botão ↗ no alto da tela também abre no navegador.</span>` : '') +
+        `<span class="tecnico" style="display:block">código: ${esc(code)} · vozes: ${Voices.all.length} (${Voices.pt.length} em português)</span>`;
       el.hidden = false;
       try { el.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } catch { /* navegador antigo */ }
       if (Player.h) updateDock();
       const b = $('#btn-nova-aba');
-      if (b) b.onclick = () => { try { window.open(location.href, '_blank', 'noopener'); } catch { /* pop-up bloqueado */ } };
+      if (b) b.onclick = () => { try { window.open(location.href, '_blank', 'noopener'); } catch { /* bloqueado: resta copiar */ } };
+      const cp = $('#btn-copiar-link');
+      if (cp) cp.onclick = async () => {
+        const campo = $('#link-app');
+        try { await navigator.clipboard.writeText(location.href); cp.textContent = 'Link copiado'; }
+        catch { campo.focus(); campo.select(); cp.textContent = 'Toque e segure no link para copiar'; }
+      };
     },
   };
 
