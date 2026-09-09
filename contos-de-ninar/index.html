@@ -309,7 +309,8 @@
   .progress { height: 4px; border-radius: 999px; background: var(--sky-3); overflow: hidden; }
   .progress > div { height: 100%; width: 0%; background: var(--lamp); transition: width .3s; }
   .controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
-  .controls .left { display: flex; justify-content: flex-start; }
+  .controls .left { display: flex; flex-direction: column; justify-content: center; gap: 5px; }
+  .controls .left .switch { font-size: 12.5px; }
   .controls .right { display: flex; justify-content: flex-end; }
   .transport { display: flex; align-items: center; gap: 14px; }
   .round { width: 46px; height: 46px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--sky-2); display: grid; place-items: center; }
@@ -528,6 +529,11 @@
           <input type="checkbox" id="soninho" checked>
           <span class="track" aria-hidden="true"></span>
           <span>Modo soninho</span>
+        </label>
+        <label class="switch" title="Chuva, grilos, ondas... um som baixinho de fundo, do jeito do cenário escolhido">
+          <input type="checkbox" id="sons-ambiente" checked>
+          <span class="track" aria-hidden="true"></span>
+          <span>Sons do cenário</span>
         </label>
       </div>
       <div class="transport">
@@ -809,6 +815,268 @@
     },
   };
 
+  /* =========================================================
+     AMBIENTE: sons de fundo do cenário, sintetizados no navegador
+     (sem arquivo de áudio nenhum: osciladores e ruído filtrado)
+     ========================================================= */
+  const Ambiente = {
+    ctx: null, duckGain: null, saidaGain: null,
+    layers: [], eventos: [], cenarioAtual: null, ativo: false, ligado: true, _limpezaId: null,
+
+    // ruído colorido: fonte pra vento, ondas, chuva de fundo
+    ruido(cor) {
+      const ctx = this.ctx;
+      const n = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, n, ctx.sampleRate);
+      const d = buffer.getChannelData(0);
+      if (cor === 'branco') {
+        for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      } else { // rosa, aproximação de Paul Kellet: mais grave, mais natural pro ouvido
+        let b0 = 0, b1 = 0, b2 = 0;
+        for (let i = 0; i < n; i++) {
+          const w = Math.random() * 2 - 1;
+          b0 = 0.99765 * b0 + w * 0.0990460;
+          b1 = 0.96300 * b1 + w * 0.2965164;
+          b2 = 0.57000 * b2 + w * 1.0526913;
+          d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11;
+        }
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer; src.loop = true;
+      return src;
+    },
+
+    // vento: ruído grave com o corte do filtro balançando bem devagar
+    vento(freqBase, vol) {
+      const ctx = this.ctx;
+      const noise = this.ruido('rosa');
+      const filtro = ctx.createBiquadFilter();
+      filtro.type = 'lowpass'; filtro.frequency.value = freqBase; filtro.Q.value = 0.6;
+      const g = ctx.createGain(); g.gain.value = vol;
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 0.06 + Math.random() * 0.05;
+      const lfoGain = ctx.createGain(); lfoGain.gain.value = freqBase * 0.55;
+      lfo.connect(lfoGain); lfoGain.connect(filtro.frequency);
+      noise.connect(filtro); filtro.connect(g); g.connect(this.duckGain);
+      noise.start(); lfo.start();
+      this.layers.push(noise, lfo);
+    },
+
+    // ondas: ruído numa faixa estreita, subindo e descendo tipo "shhh... shhh..."
+    ondas(vol, freqBase, estilo) {
+      const ctx = this.ctx;
+      const noise = this.ruido('branco');
+      const filtro = ctx.createBiquadFilter();
+      filtro.type = 'bandpass';
+      filtro.frequency.value = freqBase;
+      filtro.Q.value = estilo === 'abafado' ? 1.4 : 0.7; // abafado = fundo do mar, aberto = praia
+      const g = ctx.createGain(); g.gain.value = 0;
+      noise.connect(filtro); filtro.connect(g); g.connect(this.duckGain);
+      noise.start();
+      this.layers.push(noise);
+      const ciclo = () => {
+        if (!this.ativo) return;
+        const t = ctx.currentTime, dur = 3.2 + Math.random() * 2.6;
+        g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t);
+        g.gain.linearRampToValueAtTime(vol, t + dur * 0.45);
+        g.gain.linearRampToValueAtTime(vol * 0.12, t + dur);
+        this.eventos.push(setTimeout(ciclo, dur * 900));
+      };
+      ciclo();
+    },
+
+    // grilos: bipes curtos e agudos, em rajadas com intervalo irregular (do jeito que grilo canta)
+    grilos(vol) {
+      const ctx = this.ctx;
+      const cantar = () => {
+        if (!this.ativo) return;
+        const freq = 3500 + Math.random() * 900;
+        const n = 2 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < n; i++) {
+          const t = ctx.currentTime + i * 0.09;
+          const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(vol, t + 0.006);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc.connect(g); g.connect(this.duckGain);
+          osc.start(t); osc.stop(t + 0.06);
+        }
+        this.eventos.push(setTimeout(cantar, 500 + Math.random() * 2200));
+      };
+      this.eventos.push(setTimeout(cantar, Math.random() * 1500));
+    },
+
+    // trovão distante: estrondo raro, ruído com o corte caindo rápido pro grave
+    trovaoRaro(vol, minSeg, maxSeg) {
+      const ctx = this.ctx;
+      const trovejar = () => {
+        if (!this.ativo) return;
+        const t = ctx.currentTime;
+        const noise = this.ruido('branco');
+        const filtro = ctx.createBiquadFilter();
+        filtro.type = 'lowpass';
+        filtro.frequency.setValueAtTime(850, t);
+        filtro.frequency.exponentialRampToValueAtTime(65, t + 1.3);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2.6 + Math.random() * 1.4);
+        noise.connect(filtro); filtro.connect(g); g.connect(this.duckGain);
+        noise.start(t); noise.stop(t + 4.5);
+        this.eventos.push(setTimeout(trovejar, (minSeg + Math.random() * (maxSeg - minSeg)) * 1000));
+      };
+      this.eventos.push(setTimeout(trovejar, 5000 + Math.random() * 6000));
+    },
+
+    // drone grave do espaço, respirando bem devagar
+    drone(freqBase, vol) {
+      const ctx = this.ctx;
+      const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freqBase;
+      const g = ctx.createGain(); g.gain.value = vol;
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 0.045;
+      const lfoGain = ctx.createGain(); lfoGain.gain.value = vol * 0.35;
+      lfo.connect(lfoGain); lfoGain.connect(g.gain);
+      osc.connect(g); g.connect(this.duckGain);
+      osc.start(); lfo.start();
+      this.layers.push(osc, lfo);
+    },
+
+    // estrelinhas: bipes altos e esparsos, tipo caixinha de música distante
+    estrelinhas(vol) {
+      const ctx = this.ctx;
+      const notas = [523.25, 587.33, 659.25, 783.99, 880.00]; // pentatônica, sem nota "errada"
+      const piscar = () => {
+        if (!this.ativo) return;
+        const t = ctx.currentTime, freq = notas[Math.floor(Math.random() * notas.length)] * 2;
+        const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+        osc.connect(g); g.connect(this.duckGain);
+        osc.start(t); osc.stop(t + 1.5);
+        this.eventos.push(setTimeout(piscar, 3500 + Math.random() * 6000));
+      };
+      this.eventos.push(setTimeout(piscar, 1200));
+    },
+
+    // sininhos: parecido com estrelinhas, mais grave e mais espaçado, tipo sino de vento distante
+    sininhos(vol) {
+      const ctx = this.ctx;
+      const notas = [392.00, 440.00, 523.25, 587.33];
+      const tocar = () => {
+        if (!this.ativo) return;
+        const t = ctx.currentTime, freq = notas[Math.floor(Math.random() * notas.length)];
+        const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+        osc.connect(g); g.connect(this.duckGain);
+        osc.start(t); osc.stop(t + 2.3);
+        this.eventos.push(setTimeout(tocar, 5000 + Math.random() * 7000));
+      };
+      this.eventos.push(setTimeout(tocar, 2000));
+    },
+
+    // hum: zumbido bem baixo e constante, tipo cidade ouvida de longe pela janela
+    hum(vol) {
+      const ctx = this.ctx;
+      const osc = ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 55;
+      const filtro = ctx.createBiquadFilter(); filtro.type = 'lowpass'; filtro.frequency.value = 180;
+      const g = ctx.createGain(); g.gain.value = vol;
+      osc.connect(filtro); filtro.connect(g); g.connect(this.duckGain);
+      osc.start();
+      this.layers.push(osc);
+    },
+
+    // relógio: tique-taque bem baixinho, um clique curto por segundo
+    relogio(vol) {
+      const ctx = this.ctx;
+      const tique = () => {
+        if (!this.ativo) return;
+        const t = ctx.currentTime;
+        const osc = ctx.createOscillator(); osc.type = 'square'; osc.frequency.value = 1200;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        osc.connect(g); g.connect(this.duckGain);
+        osc.start(t); osc.stop(t + 0.05);
+        this.eventos.push(setTimeout(tique, 1000));
+      };
+      tique();
+    },
+
+    async iniciar(nomeCenario) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!this.ctx) {
+        try {
+          this.ctx = new AC();
+          this.duckGain = this.ctx.createGain(); this.duckGain.gain.value = 1;
+          this.saidaGain = this.ctx.createGain(); this.saidaGain.gain.value = 0;
+          this.duckGain.connect(this.saidaGain); this.saidaGain.connect(this.ctx.destination);
+        } catch { this.ctx = null; return; }
+      }
+      if (this.ctx.state === 'suspended') { try { await this.ctx.resume(); } catch { /* toca sem ambiente */ } }
+      if (this.ctx.state !== 'running') return;
+      if (this.cenarioAtual === nomeCenario && this.layers.length) return; // já é essa cena
+      this.pararCamadas();
+      this.cenarioAtual = nomeCenario;
+      this.ativo = true;
+      (AMBIENTE_RECEITAS[nomeCenario] || AMBIENTE_RECEITAS['O Quarto da Criança'])(this);
+      if (this.ligado) this.saidaGain.gain.setTargetAtTime(1, this.ctx.currentTime, 1.6);
+    },
+
+    parar() {
+      this.ativo = false;
+      if (this.ctx && this.saidaGain) this.saidaGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.6);
+      clearTimeout(this._limpezaId);
+      this._limpezaId = setTimeout(() => this.pararCamadas(), 1200);
+    },
+
+    pararCamadas() {
+      for (const id of this.eventos) clearTimeout(id);
+      this.eventos = [];
+      for (const n of this.layers) { try { n.stop(); } catch { /* nó sem stop */ } try { n.disconnect(); } catch { /* já desligado */ } }
+      this.layers = [];
+      this.cenarioAtual = null;
+    },
+
+    duck(ativo) {
+      if (!this.ctx || !this.duckGain) return;
+      this.duckGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.duckGain.gain.setTargetAtTime(ativo ? 0.4 : 1, this.ctx.currentTime, ativo ? 0.35 : 0.9);
+    },
+
+    // acompanha o modo soninho: nos últimos 30% da história, o ambiente também baixa
+    soninho(progresso) {
+      if (!this.ctx || !this.saidaGain || !this.ligado) return;
+      let alvo = 1;
+      if (Player.soninho && progresso > 0.7) alvo = 1 - 0.55 * ((progresso - 0.7) / 0.3);
+      this.saidaGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.saidaGain.gain.setTargetAtTime(alvo, this.ctx.currentTime, 1.2);
+    },
+
+    alternar(ligado) {
+      this.ligado = ligado;
+      if (!this.ctx || !this.saidaGain) return;
+      this.saidaGain.gain.setTargetAtTime(ligado && this.ativo ? 1 : 0, this.ctx.currentTime, 0.6);
+    },
+  };
+
+  // uma "receita" por cenário: quais camadas tocar e em que volume (tudo relativo, já bem baixinho)
+  const AMBIENTE_RECEITAS = {
+    'Floresta Encantada':  (a) => { a.vento(260, 0.045); a.grilos(0.16); a.trovaoRaro(0.14, 24, 55); },
+    'Fundo do Mar':        (a) => { a.ondas(0.16, 650, 'abafado'); },
+    'Espaço Sideral':      (a) => { a.drone(48, 0.05); a.estrelinhas(0.07); },
+    'Fazenda':             (a) => { a.vento(300, 0.035); a.grilos(0.13); },
+    'Castelo nas Nuvens':  (a) => { a.vento(220, 0.08); a.sininhos(0.06); },
+    'Cidade à Noite':      (a) => { a.hum(0.05); },
+    'Praia ao Pôr do Sol': (a) => { a.ondas(0.20, 900, 'aberto'); a.vento(320, 0.025); },
+    'O Quarto da Criança': (a) => { a.relogio(0.045); a.vento(420, 0.015); },
+  };
+
   const Som = {
     primed: false, ouviu: false, ultimoErro: null, avisado: null, hb: null,
     // iOS e Chrome só liberam a fala se um speak() sair de dentro do toque.
@@ -978,10 +1246,13 @@
 
   async function speakFala(f, progresso, run) {
     const p = paramsFor(f, progresso);
+    Ambiente.soninho(progresso);
+    Ambiente.duck(true);
     for (const c of splitChunks(f.texto)) {
       if (run !== Player.runId) return;
       await speakChunk(c, p, run);
     }
+    Ambiente.duck(false);
     if (run !== Player.runId) return;
     const pausa = clamp(Number(f.pausa) || 350, 0, 4000) * (Player.soninho && progresso > 0.8 ? 1.3 : 1);
     await sleep(pausa);
@@ -1006,6 +1277,7 @@
       this.stopSpeech();
       const run = ++this.runId;
       this.playing = true; updateDock(); Som.batida();
+      Ambiente.iniciar(this.h.cenario);
       if (Voices.ok && speechSynthesis.paused) speechSynthesis.resume();
       await sleep(60); // o Chrome ignora speak() colado num cancel()
       if (run !== this.runId) return;
@@ -1016,9 +1288,10 @@
         if (run !== this.runId) return;
       }
       this.i = this.h.falas.length - 1; this.playing = false; this.terminou = true;
+      Ambiente.parar();
       updateDock(); setStage(null);
     },
-    pause() { this.stopSpeech(); updateDock(); },
+    pause() { this.stopSpeech(); Ambiente.parar(); updateDock(); },
     toggle() { this.playing ? this.pause() : this.play(); },
     next() { if (!this.h) return; const was = this.playing; const i = clamp(this.i + 1, 0, this.h.falas.length - 1); this.terminou = false; if (was) this.play(i); else { this.i = i; highlight(i); } },
     prev() { if (!this.h) return; const was = this.playing; const i = clamp(this.i - 1, 0, this.h.falas.length - 1); this.terminou = false; if (was) this.play(i); else { this.i = i; highlight(i); } },
@@ -1176,7 +1449,7 @@
     $('#view-player').hidden = !player;
     $('#dock').hidden = !player;
     $('#app').classList.toggle('has-dock', player);
-    if (!player) Player.stopSpeech();
+    if (!player) { Player.stopSpeech(); Ambiente.parar(); }
     window.scrollTo({ top: 0 });
   }
 
@@ -1450,6 +1723,7 @@
   $('#btn-next').addEventListener('click', () => { Som.prime(); Player.next(); });
   $('#btn-reiniciar').addEventListener('click', () => { Som.prime(); Player.terminou = false; Player.play(0); });
   $('#soninho').addEventListener('change', (ev) => { Player.soninho = ev.target.checked; });
+  $('#sons-ambiente').addEventListener('change', (ev) => { Ambiente.alternar(ev.target.checked); });
   $('#script').addEventListener('click', (ev) => { const li = ev.target.closest('li[data-i]'); if (li) { Som.prime(); Player.play(Number(li.dataset.i)); } });
   $('#script').addEventListener('keydown', (ev) => { const li = ev.target.closest('li[data-i]'); if (li && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); Player.play(Number(li.dataset.i)); } });
   $('#cast-panel').addEventListener('click', (ev) => {
@@ -1503,6 +1777,9 @@
     catch { sampleFn = null; }
     renderModoAviso();
   })();
+
+  // acesso só pra depurar pelo console do navegador (nenhum dado sensível aqui)
+  window.__debug = { Ambiente, Player, Voices, Som };
 })();
 </script>
 

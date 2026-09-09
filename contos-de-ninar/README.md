@@ -73,6 +73,27 @@ A emoção de cada fala multiplica a velocidade e desloca tom e volume:
 
 Detalhes de robustez: as falas são divididas em trechos de até 180 caracteres (o Chrome corta falas longas), um temporizador de vigia destrava a fila se o navegador não avisar o fim de uma fala, e as referências das falas ficam guardadas até terminar (sem isso o Chrome às vezes não dispara `onend`).
 
+### Sons de ambiente
+
+Cada um dos oito cenários toca um leito de som baixinho por trás da narração: grilos e vento na floresta, ondas no mar e na praia, um zumbido grave na cidade, sino distante no castelo, tique-taque no quarto. Diferente da voz, que muda a cada história, o som ambiente é sempre o mesmo por cenário, então não tem custo nenhum por história, nem no protótipo nem na versão final.
+
+No protótipo isso é gerado na hora pelo próprio navegador, com a Web Audio API: osciladores e ruído filtrado, sem nenhum arquivo de áudio. Um módulo (`Ambiente` em `index.html`) compõe cada cenário a partir de camadas pequenas:
+
+| Camada | Como soa | Onde é usada |
+|---|---|---|
+| `vento` | ruído grave com o filtro balançando devagar | floresta, fazenda, castelo, quarto |
+| `ondas` | ruído numa faixa estreita, subindo e descendo | mar (mais fechado), praia (mais aberto) |
+| `grilos` | bipes agudos em rajadas irregulares | floresta, fazenda |
+| `trovaoRaro` | estrondo raro e distante, a cada 24 a 55s | floresta |
+| `drone` | zumbido grave "respirando" bem devagar | espaço |
+| `estrelinhas` / `sininhos` | bipes esparsos numa escala pentatônica, sem nota dissonante | espaço / castelo |
+| `hum` | zumbido baixo e constante | cidade |
+| `relogio` | tique-taque de um clique por segundo | quarto |
+
+O volume do ambiente abaixa sozinho enquanto o personagem fala (para a voz não competir com o fundo) e volta a subir na pausa entre falas, e acompanha o modo soninho, ficando mais baixo junto com a voz perto do final. Um interruptor "Sons do cenário" no rodapé liga e desliga.
+
+Na versão final, o ideal é trocar a síntese por gravações reais ou por um som gerado uma única vez por cenário (banco de sons livre, ou uma chamada paga de geração de áudio), guardado como arquivo estático e reaproveitado por todas as histórias daquele cenário. Efeitos pontuais amarrados a um momento específico da história, tipo uma porta rangendo, viriam depois: precisam que o roteiro gerado pelo Claude marque onde e qual efeito entra, dentro de uma lista fechada, do mesmo jeito que a emoção de cada fala hoje é uma entre doze palavras fixas.
+
 ### Limitações do protótipo
 
 - **Qualidade depende do aparelho.** No Edge (computador) há várias vozes neurais em pt-BR e o resultado é bom; no Chrome de computador costuma haver uma só voz do Google; no iPhone a voz "Luciana"; no Android depende das vozes instaladas. É por isso que a versão de produção precisa de um serviço de voz neural.
